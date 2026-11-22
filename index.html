@@ -8006,17 +8006,21 @@ window.vklSupportSend = async function() {
     const isOrderCodeError = normalizedValue.includes("đơn hàng của mình bị lỗi / sai mã") || normalizedValue.includes("đơn bị lỗi / sai mã");
     const isCancelOrder = normalizedValue.includes("mình muốn huỷ đơn") || normalizedValue.includes("muốn huỷ đơn");
     const currentUser = window.auth?.currentUser;
-    const accountName = currentUser?.email ? currentUser.email.split("@")[0] : "bạn";
-    if (isTopupProblem) {
-      let accountId = "chưa có ID";
-      if (currentUser) {
-        try {
-          const walletSnap = await firebase.firestore().collection("wallets").doc(currentUser.uid).get();
-          if (walletSnap.exists && walletSnap.data().userId) accountId = String(walletSnap.data().userId);
-        } catch (error) {
-          console.error("Không tải được ID tài khoản hỗ trợ:", error);
+    let accountName = currentUser?.email ? currentUser.email.split("@")[0] : "bạn";
+    let accountId = "chưa có ID";
+    if (currentUser) {
+      try {
+        const walletSnap = await firebase.firestore().collection("wallets").doc(currentUser.uid).get();
+        if (walletSnap.exists) {
+          const walletData = walletSnap.data();
+          accountName = String(walletData.displayName || accountName);
+          if (walletData.userId) accountId = String(walletData.userId);
         }
+      } catch (error) {
+        console.error("Không tải được tên hiển thị/ID tài khoản hỗ trợ:", error);
       }
+    }
+    if (isTopupProblem) {
       reply.textContent = "TIN NHẮN TỰ ĐỘNG\n\nChào " + accountName + "! Nạp Xu tự động thường được cộng sau khoảng 2–5 phút.\n\n1) Kiểm tra nội dung chuyển khoản đúng dạng:\nTên chuyentien " + accountId + "\n\n2) Số tiền tối thiểu mỗi lần nạp là 2.000 Xu.\n\nNếu đã quá 30 phút mà vẫn chưa nhận được Xu, vui lòng gửi ảnh biên lai và mã giao dịch để Admin kiểm tra, duyệt thủ công.";
     } else if (isWrongTransferNote) {
       reply.textContent = "TIN NHẮN TỰ ĐỘNG\n\nChào " + accountName + ", nếu chuyển khoản sai nội dung thì hệ thống không tự cộng được.\n\nBạn gửi giúp ảnh biên lai qua phần liên hệ hoặc gửi mã giao dịch + số tiền ngay trong khung chat này, admin sẽ xét duyệt và cộng tiền thủ công cho bạn.";
