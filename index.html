@@ -2239,17 +2239,21 @@ body.dark .vkl-account-tab.active {
 
 </div>
 <div id="vkl-tab-info">
-<p class="vkl-rainbow-name" id="vkl-account-display-name">
-  ${username}
-</p>
-<div style="margin:12px 0;padding:14px;background:rgba(102,80,237,.08);border-radius:12px;text-align:left">
-  <label for="vkl-display-name-input" style="display:block;font-weight:800;margin-bottom:8px">Tên hiển thị</label>
+<div style="display:flex;align-items:center;gap:8px;margin:0 0 10px">
+  <p class="vkl-rainbow-name" id="vkl-account-display-name" style="margin:0">${username}</p>
+  <button type="button" onclick="window.toggleDisplayNameEditor()" aria-label="Đổi tên hiển thị"
+    style="border:0;background:transparent;padding:4px;font-size:18px;line-height:1">✏️</button>
+</div>
+<div id="vkl-display-name-editor" style="display:none;margin:10px 0 14px;padding:13px;background:rgba(102,80,237,.08);border-radius:12px;text-align:left">
+  <label for="vkl-display-name-input" style="display:block;font-weight:800;margin-bottom:8px">Tên hiển thị mới</label>
   <input id="vkl-display-name-input" type="text" maxlength="24" placeholder="Nhập tên bạn muốn hiển thị"
-    style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #aeb5c1;border-radius:9px;background:#fff;color:#222936;font-size:16px">
-  <button type="button" onclick="window.saveCustomerDisplayName()" 
-    style="width:100%;padding:12px;margin-top:9px;border:0;border-radius:9px;background:#16a36a;color:#fff;font-weight:800">
-    LƯU TÊN HIỂN THỊ
-  </button>
+    style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #aeb5c1;border-radius:9px;font-size:16px">
+  <div style="display:flex;gap:8px;margin-top:9px">
+    <button type="button" onclick="window.saveCustomerDisplayName()"
+      style="flex:1;padding:11px;border:0;border-radius:9px;background:#16a36a;color:#fff;font-weight:800">LƯU</button>
+    <button type="button" onclick="window.toggleDisplayNameEditor(false)"
+      style="padding:11px 14px;border:0;border-radius:9px;background:#8993a5;color:#fff;font-weight:800">HỦY</button>
+  </div>
   <div id="vkl-display-name-message" style="font-size:13px;margin-top:7px;text-align:center"></div>
 </div>
         <p style="font-size:15px;font-weight:bold;color:#64748b">
@@ -3944,36 +3948,46 @@ if (homeBalance) {
   }
 };
 // ĐỔI TÊN HIỂN THỊ (không đổi username/mật khẩu đăng nhập)
+window.toggleDisplayNameEditor = function(force) {
+  const editor = document.getElementById("vkl-display-name-editor");
+  const input = document.getElementById("vkl-display-name-input");
+  if (!editor) return;
+  const show = typeof force === "boolean" ? force : editor.style.display === "none";
+  editor.style.display = show ? "block" : "none";
+  if (show && input) {
+    const current = document.getElementById("vkl-account-display-name")?.textContent?.trim() || "";
+    input.value = current;
+    setTimeout(() => input.focus(), 0);
+  }
+};
+
+// Đổi tên hiển thị, không thay đổi tên đăng nhập hoặc mật khẩu
 window.saveCustomerDisplayName = async function() {
   const user = window.auth?.currentUser;
   const input = document.getElementById("vkl-display-name-input");
   const message = document.getElementById("vkl-display-name-message");
   const name = (input?.value || "").trim();
-
-  if (!user) {
-    if (message) message.textContent = "Vui lòng đăng nhập!";
-    return;
-  }
+  if (!user) { if (message) message.textContent = "Vui lòng đăng nhập lại."; return; }
   if (name.length < 2 || name.length > 24) {
-    if (message) message.textContent = "Tên hiển thị phải từ 2 đến 24 ký tự.";
+    if (message) message.textContent = "Tên phải từ 2 đến 24 ký tự.";
     return;
   }
-
   try {
     if (message) message.textContent = "Đang lưu...";
-    await db.collection("wallets").doc(user.uid).set({
+    const walletRef = firebase.firestore().collection("wallets").doc(user.uid);
+    await walletRef.set({
       displayName: name,
       displayNameUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
-
     const title = document.getElementById("vkl-account-display-name");
     const homeName = document.getElementById("home-info-name");
     if (title) title.textContent = name;
     if (homeName) homeName.textContent = name;
-    if (message) message.textContent = "Đã đổi tên hiển thị thành công!";
+    if (message) message.textContent = "Đã lưu tên hiển thị!";
+    window.toggleDisplayNameEditor(false);
   } catch (error) {
     console.error("Lỗi đổi tên hiển thị:", error);
-    if (message) message.textContent = "Không thể lưu tên. Vui lòng thử lại!";
+    if (message) message.textContent = "Lưu thất bại: " + (error.code || error.message || "Lỗi không xác định");
   }
 };
 
@@ -5635,10 +5649,15 @@ if (accountIdEl) {
 }
 
 const homeName = document.getElementById("home-info-name");
+const accountName = document.getElementById("vkl-account-display-name");
+const accountNameInput = document.getElementById("vkl-display-name-input");
+const savedDisplayName = walletSnap.data().displayName || username || "Chưa có tên";
 const homeId = document.getElementById("home-info-id");
 const homeBalance = document.getElementById("home-info-balance");
 
-if (homeName) homeName.textContent = username || "Chưa có tên";
+if (homeName) homeName.textContent = savedDisplayName;
+if (accountName) accountName.textContent = savedDisplayName;
+if (accountNameInput) accountNameInput.value = savedDisplayName;
 if (homeId) homeId.textContent = walletSnap.data().userId || "Chưa có ID";
 if (homeBalance) {
   homeBalance.textContent = coins.toLocaleString("vi-VN") + " VNĐ";
