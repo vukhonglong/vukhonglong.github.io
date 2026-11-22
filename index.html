@@ -2239,9 +2239,19 @@ body.dark .vkl-account-tab.active {
 
 </div>
 <div id="vkl-tab-info">
-<p class="vkl-rainbow-name">
+<p class="vkl-rainbow-name" id="vkl-account-display-name">
   ${username}
 </p>
+<div style="margin:12px 0;padding:14px;background:rgba(102,80,237,.08);border-radius:12px;text-align:left">
+  <label for="vkl-display-name-input" style="display:block;font-weight:800;margin-bottom:8px">Tên hiển thị</label>
+  <input id="vkl-display-name-input" type="text" maxlength="24" placeholder="Nhập tên bạn muốn hiển thị"
+    style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #aeb5c1;border-radius:9px;background:#fff;color:#222936;font-size:16px">
+  <button type="button" onclick="window.saveCustomerDisplayName()" 
+    style="width:100%;padding:12px;margin-top:9px;border:0;border-radius:9px;background:#16a36a;color:#fff;font-weight:800">
+    LƯU TÊN HIỂN THỊ
+  </button>
+  <div id="vkl-display-name-message" style="font-size:13px;margin-top:7px;text-align:center"></div>
+</div>
         <p style="font-size:15px;font-weight:bold;color:#64748b">
           ID tài khoản: <span class="rainbow-id">${userId}</span>
         </p>
@@ -3895,11 +3905,17 @@ if (isAdmin && walletSnap.exists && walletSnap.data().userId !== "777777") {
 
       walletSnap = await walletRef.get();
     }
-// CẬP NHẬT ID TÀI KHOẢN TỪ FIRESTORE
+// CẬP NHẬT TÊN HIỂN THỊ VÀ ID TÀI KHOẢN TỪ FIRESTORE
+const walletData = walletSnap.data();
+const displayName = walletData.displayName || username;
+const displayNameEl = document.getElementById("vkl-account-display-name");
+const displayNameInput = document.getElementById("vkl-display-name-input");
+if (displayNameEl) displayNameEl.textContent = displayName;
+if (displayNameInput) displayNameInput.value = displayName;
 const accountIdEl = document.querySelector(".rainbow-id");
 
 if (accountIdEl) {
-  accountIdEl.textContent = walletSnap.data().userId || "Chưa có ID";
+  accountIdEl.textContent = walletData.userId || "Chưa có ID";
 }
     const coins = Number(walletSnap.data().coins || 0);
     if (balanceEl) {
@@ -3909,7 +3925,7 @@ const homeName = document.getElementById("home-info-name");
 const homeId = document.getElementById("home-info-id");
 const homeBalance = document.getElementById("home-info-balance");
 
-if (homeName) homeName.textContent = username;
+if (homeName) homeName.textContent = walletSnap.data().displayName || username;
 if (homeId) homeId.textContent = walletSnap.data().userId || "Chưa có ID";
 if (homeBalance) {
   homeBalance.textContent = coins.toLocaleString("vi-VN") + " VNĐ";
@@ -3927,6 +3943,40 @@ if (homeBalance) {
     }
   }
 };
+// ĐỔI TÊN HIỂN THỊ (không đổi username/mật khẩu đăng nhập)
+window.saveCustomerDisplayName = async function() {
+  const user = window.auth?.currentUser;
+  const input = document.getElementById("vkl-display-name-input");
+  const message = document.getElementById("vkl-display-name-message");
+  const name = (input?.value || "").trim();
+
+  if (!user) {
+    if (message) message.textContent = "Vui lòng đăng nhập!";
+    return;
+  }
+  if (name.length < 2 || name.length > 24) {
+    if (message) message.textContent = "Tên hiển thị phải từ 2 đến 24 ký tự.";
+    return;
+  }
+
+  try {
+    if (message) message.textContent = "Đang lưu...";
+    await db.collection("wallets").doc(user.uid).set({
+      displayName: name,
+      displayNameUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    const title = document.getElementById("vkl-account-display-name");
+    const homeName = document.getElementById("home-info-name");
+    if (title) title.textContent = name;
+    if (homeName) homeName.textContent = name;
+    if (message) message.textContent = "Đã đổi tên hiển thị thành công!";
+  } catch (error) {
+    console.error("Lỗi đổi tên hiển thị:", error);
+    if (message) message.textContent = "Không thể lưu tên. Vui lòng thử lại!";
+  }
+};
+
 // Tự tải thông tin ví lên trang chủ sau khi đăng nhập
 window.auth.onAuthStateChanged(user => {
   const homeName = document.getElementById("home-info-name");
