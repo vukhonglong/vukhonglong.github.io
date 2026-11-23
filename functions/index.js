@@ -144,3 +144,23 @@ exports.grantLuckyWheelToAll = onCall({ region: "asia-southeast1", timeoutSecond
   } while (pageToken);
   return { success: true, accounts: total, grantedPerAccount: 1 };
 });
+
+
+exports.getLuckyWheelStatus = onCall({ region: "asia-southeast1" }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Vui lòng đăng nhập.");
+  const uid = request.auth.uid;
+  const email = String(request.auth.token.email || "").toLowerCase();
+  const isAdmin = email === ADMIN_EMAIL && request.auth.token.email_verified === true;
+  if (isAdmin) return { isAdmin: true, remaining: 0, dailyUsed: false, freeDailyEnabled: true };
+  const [creditSnap, dailySnap, settingsSnap] = await Promise.all([
+    db.collection("luckyWheelCredits").doc(uid).get(),
+    db.collection("luckyWheelSpins").doc(uid + "_" + vietnamDateKey()).get(),
+    db.doc(SETTINGS_PATH).get()
+  ]);
+  return {
+    isAdmin: false,
+    remaining: creditSnap.exists ? Math.max(0, Number(creditSnap.data().remaining || 0)) : 0,
+    dailyUsed: dailySnap.exists,
+    freeDailyEnabled: settingsSnap.exists && settingsSnap.data().freeDailyEnabled === true
+  };
+});
