@@ -1,6 +1,7 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+const { getAuth } = require("firebase-admin/auth");
 
 initializeApp();
 const db = getFirestore();
@@ -61,15 +62,23 @@ exports.spinLuckyWheel = onCall({ region: "asia-southeast1" }, async (request) =
 
   const settingsRef = db.doc(SETTINGS_PATH);
   const spinRef = db.collection("luckyWheelSpins").doc(spinId);
+  const creditRef = db.collection("luckyWheelCredits").doc(uid);
   const walletRef = db.collection("wallets").doc(uid);
 
   return db.runTransaction(async (tx) => {
     const settingsSnap = await tx.get(settingsRef);
     if (!settingsSnap.exists) throw new HttpsError("failed-precondition", "Chưa có cấu hình vòng quay.");
     const prizes = parsePrizes(settingsSnap.data().prizes);
-    const spinSnap = await tx.get(spinRef);
+    const creditSnap = isAdmin ? null : await tx.get(creditRef);
+    const giftedRemaining = creditSnap && creditSnap.exists ? Math.max(0, Number(creditSnap.data().remaining || 0)) : 0;
+    const hasGiftedSpin = giftedRemaining > 0;
+    const effectiveSpinRef = hasGiftedSpin ? db.collection("luckyWheelSpins").doc(uid + "_gift_" + String(request.data && request.data.requestId || "")) : spinRef;
+    const spinSnap = await tx.get(effectiveSpinRef);
     if (spinSnap.exists) {
-      throw new HttpsError("already-exists", isAdmin ? "Lượt quay này đã được xử lý." : "Bạn đã quay hôm nay rồi.");
+      throw new HttpsError("already-exists", isAdmin ? "Lượt quay này đã được xử lý." : (hasGiftedSpin ? "Lượt quay này đã được xử lý." : "Bạn đã quay hôm nay rồi."));
+    }
+    if (!isAdmin && !hasGiftedSpin && settingsSnap.data().freeDailyEnabled !== true) {
+      throw new HttpsError("failed-precondition", "Hiện chưa có lượt quay miễn phí. Vui lòng chờ admin tặng lượt.");
     }
     const walletSnap = await tx.get(walletRef);
     const currentCoins = walletSnap.exists && Number.isFinite(Number(walletSnap.data().coins))
@@ -85,7 +94,7 @@ exports.spinLuckyWheel = onCall({ region: "asia-southeast1" }, async (request) =
     const newCoins = currentCoins + selected.coins;
     const date = vietnamDateKey();
 
-    tx.create(spinRef, {
+    tx.create(effectiveSpinRef, {
       uid,
       prize: selected.label,
       prizeIndex,
@@ -93,8 +102,11 @@ exports.spinLuckyWheel = onCall({ region: "asia-southeast1" }, async (request) =
       balanceAfter: newCoins,
       date,
       createdAt: FieldValue.serverTimestamp(),
-      source: "luckyWheel"
+      source: hasGiftedSpin ? "luckyWheelGift" : "luckyWheel"
     });
+    if (hasGiftedSpin) {
+      tx.set(creditRef, { remaining: giftedRemaining - 1, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+    }
     if (selected.coins > 0) {
       tx.set(walletRef, {
         coins: newCoins,
@@ -109,4 +121,31 @@ exports.spinLuckyWheel = onCall({ region: "asia-southeast1" }, async (request) =
       date
     };
   });
+});
+
+
+// Admin action: grant exactly one additional spin to every Firebase Authentication account.
+exports.grantLuckyWheelToAll = onCall({ region: "asia-southeast1", timeoutSeconds: 540, memory: "512MiB" }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Vui lòng đăng nhập lại.");
+  const email = String(request.auth.token.email || "").toLowerCase();
+  if (email !== ADMIN_EMAIL || request.auth.token.email_verified !== true) {
+    throw new HttpsError("permission-denied", "Bạn không có quyền thực hiện thao tác này.");
+  }
+  let pageToken;
+  let total = 0;
+  do {
+    const page = await getAuth().listUsers(1000, pageToken);
+    const users = page.users.filter(u => !u.disabled);
+    for (let i = 0; i < users.length; i += 450) {
+      const batch = db.batch();
+      for (const account of users.slice(i, i + 450)) {
+        const ref = db.collection("luckyWheelCredits").doc(account.uid);
+        batch.set(ref, { remaining: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      }
+      await batch.commit();
+      total += users.slice(i, i + 450).length;
+    }
+    pageToken = page.pageToken;
+  } while (pageToken);
+  return { success: true, accounts: total, grantedPerAccount: 1 };
 });
