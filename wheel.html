@@ -38,7 +38,7 @@ canvas{width:100%;height:auto;display:block;border-radius:50%}
   <p class="hint" id="hint">Vui lòng đăng nhập trên website chính trước khi quay.</p>
   <div class="result" id="result">KẾT QUẢ CỦA BẠN<b id="prizeText"></b></div>
   <div class="history"><h2>🕘 LỊCH SỬ QUAY CỦA BẠN</h2><div class="history-list" id="history">Chưa có lịch sử.</div></div>
-  <div class="admin" id="adminBox"><h2>⚙️ CÀI ĐẶT PHẦN THƯỞNG (ADMIN)</h2><p class="hint" style="text-align:left">Mỗi dòng là một ô trên vòng quay. Tối đa 12 phần thưởng. Đây chỉ là nhãn kết quả, chưa tự động cộng Xu hay giao quà.</p><textarea id="prizeInput"></textarea><button class="spin" id="savePrizes">LƯU DANH SÁCH</button><div class="notice" id="adminMsg"></div></div>
+  <div class="admin" id="adminBox"><h2>⚙️ CÀI ĐẶT PHẦN THƯỞNG (ADMIN)</h2><p class="hint" style="text-align:left">Mỗi dòng là một ô trên vòng quay. Tối đa 12 phần thưởng. Danh sách mặc định gồm các mức Xu và “Chúc may mắn lần sau”.</p><textarea id="prizeInput"></textarea><button class="spin" id="savePrizes">LƯU DANH SÁCH</button><div class="notice" id="adminMsg"></div></div>
  </section>
  <p class="notice">Lưu ý: phiên bản này ghi nhận kết quả theo tài khoản Firebase và ngày quay. Muốn chống gian lận tuyệt đối hoặc tự động cộng Xu/giao quà cần cấu hình bảo mật Firestore và xử lý kết quả phía máy chủ.</p>
 </div>
@@ -48,7 +48,7 @@ canvas{width:100%;height:auto;display:block;border-radius:50%}
  if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
  const auth=firebase.auth(),db=firebase.firestore();
  const ADMIN="haphamngu123@gmail.com",settingsRef=db.collection("siteSettings").doc("luckyWheel");
- const defaults=["Chúc may mắn lần sau","Quà bí ẩn","Phần thưởng 1","Chúc may mắn lần sau","Phần thưởng 2","Quà bí ẩn","Phần thưởng 3","Chúc may mắn lần sau"];
+ const defaults=["500.000 Xu","200.000 Xu","100.000 Xu","50.000 Xu","20.000 Xu","10.000 Xu","Chúc may mắn lần sau"];
  let prizes=defaults.slice(),user=null,spinning=false,angle=0,hasSpun=false;
  const $=id=>document.getElementById(id),canvas=$("wheel"),ctx=canvas.getContext("2d");
  const colors=["#7136a8","#a83eaa","#52217f","#d14eaa","#38205e","#9142c8","#602a9d","#bb3f91"];
