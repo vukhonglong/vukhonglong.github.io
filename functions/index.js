@@ -49,16 +49,11 @@ exports.spinLuckyWheel = onCall({ region: "asia-southeast1" }, async (request) =
   const email = String(request.auth.token.email || "").toLowerCase();
   const isAdmin = email === ADMIN_EMAIL && request.auth.token.email_verified === true;
 
-  let spinId;
-  if (isAdmin) {
-    const requestId = String(request.data && request.data.requestId || "");
-    if (!/^[A-Za-z0-9_-]{8,100}$/.test(requestId)) {
-      throw new HttpsError("invalid-argument", "Mã lượt quay không hợp lệ.");
-    }
-    spinId = uid + "_admin_" + requestId;
-  } else {
-    spinId = uid + "_" + vietnamDateKey();
+  const requestId = String(request.data && request.data.requestId || "");
+  if (!/^[A-Za-z0-9_-]{8,100}$/.test(requestId)) {
+    throw new HttpsError("invalid-argument", "Mã lượt quay không hợp lệ.");
   }
+  const spinId = isAdmin ? uid + "_admin_" + requestId : uid + "_" + vietnamDateKey();
 
   const settingsRef = db.doc(SETTINGS_PATH);
   const spinRef = db.collection("luckyWheelSpins").doc(spinId);
