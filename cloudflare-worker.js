@@ -7,7 +7,6 @@ const cors = {
 
 const ADMIN_EMAIL = "haphamngu123@gmail.com";
 const FIREBASE_API_KEY = "AIzaSyCSdvkb2q8TIDty0fCqOqkJ15KpmFy98sY";
-const PROJECT_ID = "vukhonglong-9cfcb";
 
 function b64url(input) {
   const bytes = typeof input === "string" ? new TextEncoder().encode(input) : new Uint8Array(input);
