@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#090611">
+<title>Vòng quay may mắn</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<style>
+:root{color-scheme:dark;--bg:#090611;--panel:#171022;--line:#382451;--purple:#9b5cff;--pink:#ec49d8;--text:#f8f2ff;--muted:#b8a8ca}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% 0,#28133f 0,#100a1b 42%,#08060e 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;padding:18px 14px 40px}
+.wrap{max-width:760px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}.brand{font-weight:1000;letter-spacing:1.4px;color:#e8d6ff;text-shadow:0 0 16px #a34cff}.back,.ghost{color:#eadcff;text-decoration:none;border:1px solid var(--line);background:#1a1027;padding:10px 13px;border-radius:12px;font-weight:750}
+.hero{text-align:center;margin:20px 0 18px}.eyebrow{color:#c79bff;font-weight:900;font-size:12px;letter-spacing:3px}.hero h1{font-size:clamp(27px,7vw,42px);margin:9px 0;background:linear-gradient(90deg,#fff,#d5a7ff,#ff8be9);background-clip:text;color:transparent}.hero p{color:var(--muted);margin:0;font-size:14px}
+.panel{background:linear-gradient(145deg,#1c122aee,#100b19ee);border:1px solid #4b2c69;border-radius:24px;padding:20px;box-shadow:0 15px 50px #0008,0 0 28px #8d35db18}
+.userline{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;color:#d9c7ed;font-size:13px;margin-bottom:15px}.status{color:#cba5ff}
+.wheel-area{width:min(84vw,430px);margin:10px auto 18px;position:relative;filter:drop-shadow(0 0 22px #9b45ff55)}
+canvas{width:100%;height:auto;display:block;border-radius:50%}
+.pointer{position:absolute;z-index:2;top:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:19px solid transparent;border-right:19px solid transparent;border-top:40px solid #fff;filter:drop-shadow(0 2px 7px #e44cff)}
+.hub{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:22%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#e5baff 25%,#8f35d7 72%,#4b187e);border:5px solid #f7dcff;box-shadow:0 0 0 5px #451d68,0 0 25px #d65bff;display:grid;place-items:center;font-size:clamp(11px,3vw,16px);font-weight:1000;color:#2b0c42;text-shadow:0 1px #fff}
+.spin{display:block;width:min(100%,330px);margin:0 auto;border:0;border-radius:16px;padding:16px 20px;background:linear-gradient(100deg,#8d3be5,#d83fc8);color:white;font-size:17px;font-weight:1000;letter-spacing:1px;box-shadow:0 8px 25px #a43de955;cursor:pointer}
+.spin:disabled{opacity:.5;cursor:not-allowed}.hint{text-align:center;color:var(--muted);font-size:12px;margin:12px 0 0;line-height:1.5}
+.result{display:none;margin:17px 0 0;padding:15px;border:1px solid #9954cb;border-radius:16px;background:#28143b;text-align:center}.result b{display:block;color:#f3c7ff;font-size:21px;margin-top:5px}
+.history{margin-top:17px}.history h2,.admin h2{font-size:16px;margin:0 0 10px}.history-list{color:var(--muted);font-size:13px;line-height:1.8}.history-row{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #332141}
+.admin{display:none;margin-top:18px}.admin textarea{width:100%;min-height:120px;background:#0e0916;color:white;border:1px solid #50356a;border-radius:12px;padding:12px;font:inherit;line-height:1.6}.admin button{margin-top:10px}.notice{color:#f5c4e9;font-size:12px;line-height:1.5;margin-top:12px}
+@media(max-width:420px){.panel{padding:15px}.top{margin-bottom:12px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <div class="top"><a class="back" href="./">← Trang chủ</a><div class="brand">VKL • LUCKY SPIN</div></div>
+ <header class="hero"><div class="eyebrow">VÒNG QUAY MAY MẮN</div><h1>THỬ VẬN MAY CỦA BẠN</h1><p>Đăng nhập tài khoản để tham gia vòng quay</p></header>
+ <section class="panel">
+  <div class="userline"><span id="accountState">Đang kiểm tra đăng nhập...</span><span class="status" id="spinState">● Đang tải</span></div>
+  <div class="wheel-area"><div class="pointer"></div><canvas id="wheel" width="900" height="900"></canvas><div class="hub">LUCKY</div></div>
+  <button class="spin" id="spinBtn" disabled>QUAY NGAY</button>
+  <p class="hint" id="hint">Vui lòng đăng nhập trên website chính trước khi quay.</p>
+  <div class="result" id="result">KẾT QUẢ CỦA BẠN<b id="prizeText"></b></div>
+  <div class="history"><h2>🕘 LỊCH SỬ QUAY CỦA BẠN</h2><div class="history-list" id="history">Chưa có lịch sử.</div></div>
+  <div class="admin" id="adminBox"><h2>⚙️ CÀI ĐẶT PHẦN THƯỞNG (ADMIN)</h2><p class="hint" style="text-align:left">Mỗi dòng là một ô trên vòng quay. Tối đa 12 phần thưởng. Đây chỉ là nhãn kết quả, chưa tự động cộng Xu hay giao quà.</p><textarea id="prizeInput"></textarea><button class="spin" id="savePrizes">LƯU DANH SÁCH</button><div class="notice" id="adminMsg"></div></div>
+ </section>
+ <p class="notice">Lưu ý: phiên bản này ghi nhận kết quả theo tài khoản Firebase và ngày quay. Muốn chống gian lận tuyệt đối hoặc tự động cộng Xu/giao quà cần cấu hình bảo mật Firestore và xử lý kết quả phía máy chủ.</p>
+</div>
+<script>
+(function(){
+ const firebaseConfig={apiKey:"AIzaSyCSdvkb2q8TIDty0fCqOqkJ15KpmFy98sY",authDomain:"vukhonglong-9cfcb.firebaseapp.com",projectId:"vukhonglong-9cfcb",storageBucket:"vukhonglong-9cfcb.firebasestorage.app",messagingSenderId:"821726837864",appId:"1:821726837864:web:6228e0d8fe135eed8c4fdd",measurementId:"G-HL008X522E"};
+ if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
+ const auth=firebase.auth(),db=firebase.firestore();
+ const ADMIN="haphamngu123@gmail.com",settingsRef=db.collection("siteSettings").doc("luckyWheel");
+ const defaults=["Chúc may mắn lần sau","Quà bí ẩn","Phần thưởng 1","Chúc may mắn lần sau","Phần thưởng 2","Quà bí ẩn","Phần thưởng 3","Chúc may mắn lần sau"];
+ let prizes=defaults.slice(),user=null,spinning=false,angle=0,hasSpun=false;
+ const $=id=>document.getElementById(id),canvas=$("wheel"),ctx=canvas.getContext("2d");
+ const colors=["#7136a8","#a83eaa","#52217f","#d14eaa","#38205e","#9142c8","#602a9d","#bb3f91"];
+ function draw(){const n=prizes.length,c=450,r=425,step=Math.PI*2/n;ctx.clearRect(0,0,900,900);for(let i=0;i<n;i++){const a=angle+i*step-Math.PI/2;ctx.beginPath();ctx.moveTo(c,c);ctx.arc(c,c,r,a,a+step);ctx.closePath();ctx.fillStyle=colors[i%colors.length];ctx.fill();ctx.lineWidth=8;ctx.strokeStyle="#f0caff";ctx.stroke();ctx.save();ctx.translate(c,c);ctx.rotate(a+step/2);ctx.textAlign="right";ctx.fillStyle="#fff";ctx.shadowColor="#210d35";ctx.shadowBlur=5;ctx.font="bold 27px Arial";let label=prizes[i];while(ctx.measureText(label).width>300&&label.length>8)label=label.slice(0,-2)+"…";ctx.fillText(label, r-32, 10);ctx.restore();}ctx.beginPath();ctx.arc(c,c,r,0,Math.PI*2);ctx.lineWidth=13;ctx.strokeStyle="#e8baff";ctx.stroke();}
+ function dayKey(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+ function spinDoc(){return db.collection("luckyWheelSpins").doc(user.uid+"_"+dayKey());}
+ async function loadHistory(){const box=$("history");try{const snap=await db.collection("luckyWheelSpins").where("uid","==",user.uid).orderBy("createdAt","desc").limit(10).get();if(snap.empty){box.textContent="Chưa có lịch sử.";return;}box.innerHTML="";snap.forEach(doc=>{const d=doc.data(),row=document.createElement("div");row.className="history-row";const a=document.createElement("span"),b=document.createElement("span");a.textContent=d.prize||"—";b.textContent=d.date||"";row.append(a,b);box.append(row);});}catch(e){box.textContent="Chưa tải được lịch sử: "+e.message;}}
+ async function loadSettings(){try{const s=await settingsRef.get();if(s.exists&&Array.isArray(s.data().prizes)&&s.data().prizes.length>=2)prizes=s.data().prizes.slice(0,12);}catch(e){console.warn(e);}draw();$("prizeInput").value=prizes.join("\n");}
+ async function refresh(){if(!user){$("spinBtn").disabled=true;$("accountState").textContent="Bạn chưa đăng nhập";$("spinState").textContent="● Chưa thể quay";$("hint").textContent="Hãy đăng nhập tài khoản ở trang chủ, sau đó mở lại trang này.";return;}$("accountState").textContent="Đã đăng nhập: "+(user.displayName||user.email||"Tài khoản");$("adminBox").style.display=(user.email||"").toLowerCase()===ADMIN?"block":"none";try{const doc=await spinDoc().get();hasSpun=doc.exists;$("spinBtn").disabled=hasSpun;$("spinState").textContent=hasSpun?"● Đã quay hôm nay":"● Sẵn sàng";$("hint").textContent=hasSpun?"Tài khoản này đã sử dụng lượt quay hôm nay.":"Mỗi tài khoản có 1 lượt quay mỗi ngày.";if(doc.exists){$("result").style.display="block";$("prizeText").textContent=doc.data().prize||"";}else $("result").style.display="none";}catch(e){$("spinBtn").disabled=true;$("spinState").textContent="● Không kiểm tra được lượt quay";$("hint").textContent="Không đọc được dữ liệu vòng quay: "+e.message;}await loadHistory();}
+ $("spinBtn").addEventListener("click",async()=>{if(!user||spinning||hasSpun)return;spinning=true;$("spinBtn").disabled=true;$("spinState").textContent="● Đang quay...";try{const ref=spinDoc();const existing=await ref.get();if(existing.exists){hasSpun=true;await refresh();return;}const idx=Math.floor(Math.random()*prizes.length);const n=prizes.length,step=Math.PI*2/n;const target=((Math.PI*2)-(idx+.5)*step)%(Math.PI*2);const current=((angle%(Math.PI*2))+Math.PI*2)%(Math.PI*2);const delta=(target-current+Math.PI*2)%(Math.PI*2)+Math.PI*2*6;const start=angle,duration=5200,startAt=performance.now();function animate(now){const t=Math.min(1,(now-startAt)/duration),ease=1-Math.pow(1-t,5);angle=start+delta*ease;draw();if(t<1){requestAnimationFrame(animate);}else finish(idx,ref); }requestAnimationFrame(animate);}catch(e){spinning=false;$("spinBtn").disabled=false;$("spinState").textContent="● Lỗi";$("hint").textContent="Không thể quay: "+e.message;}});
+ async function finish(idx,ref){const prize=prizes[idx];try{await ref.set({uid:user.uid,prize,date:dayKey(),createdAt:firebase.firestore.FieldValue.serverTimestamp()});hasSpun=true;$("result").style.display="block";$("prizeText").textContent=prize;$("spinState").textContent="● Đã quay hôm nay";$("hint").textContent="Kết quả đã được lưu vào lịch sử tài khoản.";await loadHistory();}catch(e){$("hint").textContent="Vòng quay đã dừng ở kết quả: "+prize+". Nhưng chưa lưu được: "+e.message;$("spinBtn").disabled=false;$("spinState").textContent="● Chưa lưu được";}finally{spinning=false;}}
+ $("savePrizes").addEventListener("click",async()=>{if(!user||(user.email||"").toLowerCase()!==ADMIN)return;const next=$("prizeInput").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(next.length<2||next.length>12){$("adminMsg").textContent="Nhập từ 2 đến 12 phần thưởng, mỗi dòng một phần.";return;}try{await settingsRef.set({prizes:next,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:user.uid},{merge:true});prizes=next;draw();$("adminMsg").textContent="Đã lưu danh sách phần thưởng."; }catch(e){$("adminMsg").textContent="Không lưu được: "+e.message;}});
+ draw();auth.onAuthStateChanged(async u=>{user=u;await loadSettings();await refresh();});
+})();
+</script>
+</body>
+</html>
