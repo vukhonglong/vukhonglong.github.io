@@ -189,8 +189,9 @@ export default {
         throw new Error("Không kiểm tra được lượt quay: " + errText);
       }
 
-      const walletName = documentRoot + "/wallets/" + encodeURIComponent(user.uid);
-      const wallet = await firestoreRequest(walletName, token);
+      const walletDocumentName = documentRoot + "/wallets/" + encodeURIComponent(user.uid);
+      const walletUrl = base + "/wallets/" + encodeURIComponent(user.uid);
+      const wallet = await firestoreRequest(walletUrl, token);
       const fields = wallet.fields || {};
       const coinsField = fields.coins || {};
       const currentCoins = Number(coinsField.integerValue ?? coinsField.doubleValue ?? 0);
@@ -227,7 +228,7 @@ export default {
         body: JSON.stringify({
           writes: [
             {
-              update: { name: walletName, fields: walletFields },
+              update: { name: walletDocumentName, fields: walletFields },
               updateMask: { fieldPaths: ["coins", "updatedAt"] },
               currentDocument: { updateTime: wallet.updateTime }
             },
