@@ -171,7 +171,7 @@ export default {
       const date = vietnamDateKey();
       const spinId = isAdmin ? user.uid + "_admin_" + requestId : user.uid + "_" + date;
       const token = await googleAccessToken(env);
-      const base = "https://firestore.googleapis.com/v1/projects/" + PROJECT_ID + "/databases/(default)/documents";
+      const base = "https://firestore.googleapis.com/v1/projects/" + env.FIREBASE_PROJECT_ID + "/databases/(default)/documents";
       const settings = await firestoreRequest(base + "/siteSettings/luckyWheel", token);
       const rawPrizes = settings.fields && settings.fields.prizes && settings.fields.prizes.arrayValue
         ? (settings.fields.prizes.arrayValue.values || []).map(v => v.stringValue || "")
