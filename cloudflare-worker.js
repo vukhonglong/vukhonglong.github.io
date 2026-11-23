@@ -171,7 +171,8 @@ export default {
       const date = vietnamDateKey();
       const spinId = isAdmin ? user.uid + "_admin_" + requestId : user.uid + "_" + date;
       const token = await googleAccessToken(env);
-      const base = "https://firestore.googleapis.com/v1/projects/" + env.FIREBASE_PROJECT_ID + "/databases/(default)/documents";
+      const documentRoot = "projects/" + env.FIREBASE_PROJECT_ID + "/databases/(default)/documents";
+      const base = "https://firestore.googleapis.com/v1/" + documentRoot;
       const settings = await firestoreRequest(base + "/siteSettings/luckyWheel", token);
       const rawPrizes = settings.fields && settings.fields.prizes && settings.fields.prizes.arrayValue
         ? (settings.fields.prizes.arrayValue.values || []).map(v => v.stringValue || "")
@@ -188,7 +189,7 @@ export default {
         throw new Error("Không kiểm tra được lượt quay: " + errText);
       }
 
-      const walletName = base + "/wallets/" + encodeURIComponent(user.uid);
+      const walletName = documentRoot + "/wallets/" + encodeURIComponent(user.uid);
       const wallet = await firestoreRequest(walletName, token);
       const fields = wallet.fields || {};
       const coinsField = fields.coins || {};
@@ -205,7 +206,7 @@ export default {
       const newBalance = currentCoins + selected.coins;
       if (!Number.isSafeInteger(newBalance)) throw new Error("Số dư sau khi cộng vượt giới hạn.");
 
-      const spinDocName = base + "/luckyWheelSpins/" + encodeURIComponent(spinId);
+      const spinDocName = documentRoot + "/luckyWheelSpins/" + encodeURIComponent(spinId);
       const spinFields = {
         uid: firestoreValue(user.uid),
         prize: firestoreValue(selected.label),
