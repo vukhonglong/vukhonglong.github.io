@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#090611">
+<title>Tài Xỉu 3 Xúc Xắc</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<style>
+:root{color-scheme:dark;--bg:#090611;--panel:#171022;--line:#382451;--purple:#9b5cff;--pink:#ec49d8;--text:#f8f2ff;--muted:#b8a8ca}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% 0,#28133f 0,#100a1b 42%,#08060e 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;padding:16px 14px 35px}
+.wrap{max-width:620px;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.back{color:#eadcff;text-decoration:none;border:1px solid var(--line);background:#1a1027;padding:10px 13px;border-radius:12px;font-weight:750}.brand{font-weight:1000;letter-spacing:1px;color:#e8d6ff;text-shadow:0 0 16px #a34cff}
+.hero{text-align:center;margin:22px 0}.eyebrow{color:#c79bff;font-weight:900;font-size:12px;letter-spacing:3px}.hero h1{font-size:clamp(28px,8vw,42px);margin:8px 0;background:linear-gradient(90deg,#fff,#d5a7ff,#ff8be9);background-clip:text;color:transparent}.hero p{color:var(--muted);font-size:13px;margin:0}
+.panel{background:linear-gradient(145deg,#1c122aee,#100b19ee);border:1px solid #4b2c69;border-radius:23px;padding:18px;box-shadow:0 15px 50px #0008}
+.userline{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:#d9c7ed;font-size:13px;margin-bottom:15px}.balance{color:#ffe18a;font-weight:900}
+.dice-area{display:flex;justify-content:center;gap:12px;padding:22px 5px}.die{width:clamp(72px,21vw,104px);aspect-ratio:1;border-radius:20px;background:linear-gradient(145deg,#fff,#d8cce8);color:#311b48;display:grid;place-items:center;font-size:clamp(42px,12vw,62px);font-weight:1000;box-shadow:0 8px 0 #9d82b7,0 14px 25px #0007;border:3px solid #fff}
+.die.rolling{animation:shake .14s infinite alternate}@keyframes shake{from{transform:rotate(-8deg) translateY(-3px)}to{transform:rotate(8deg) translateY(3px)}}
+.total{text-align:center;color:#d9c7ed;font-size:14px}.total strong{font-size:24px;color:#fff;margin-left:6px}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:18px 0}.choice{border:2px solid #49315e;border-radius:16px;padding:15px 8px;background:#21142f;color:#fff;font-weight:1000;font-size:19px}.choice small{display:block;font-size:11px;color:#b9a7ca;margin-top:5px}.choice.active[data-choice="tai"]{border-color:#ff9a43;background:#482616;box-shadow:0 0 18px #ff9a4340}.choice.active[data-choice="xiu"]{border-color:#5aa8ff;background:#172e4c;box-shadow:0 0 18px #5aa8ff40}
+label{display:block;color:#d9c7ed;font-size:13px;font-weight:800;margin:14px 0 7px}input{width:100%;border:1px solid #50356a;background:#0e0916;color:white;border-radius:13px;padding:14px;font-size:17px;outline:none}input:focus{border-color:#b77aff}
+.quick{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.quick button{border:1px solid #50356a;background:#251632;color:#e8d6ff;border-radius:10px;padding:8px 11px;font-weight:800;font-size:12px}
+.play{width:100%;border:0;border-radius:15px;padding:16px;background:linear-gradient(100deg,#8d3be5,#d83fc8);color:white;font-size:17px;font-weight:1000;letter-spacing:1px;box-shadow:0 8px 25px #a43de955;margin-top:17px}.play:disabled{opacity:.5}
+.result{display:none;text-align:center;margin-top:16px;padding:16px;border:1px solid #9954cb;border-radius:15px;background:#28143b;line-height:1.7}.result strong{display:block;font-size:23px;color:#ffe18a}
+.note{text-align:center;color:#a995bb;font-size:11px;line-height:1.6;margin:14px 4px 0}.history{margin-top:18px}.history h2{font-size:16px}.history-row{display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid #332141;color:#cbb8dd;font-size:12px}.history-row b{color:#fff}
+@media(max-width:390px){.panel{padding:14px}.die{border-radius:15px}.choices{gap:8px}}
+</style>
+</head>
+<body><div class="wrap">
+<div class="top"><a class="back" href="./">← Trang chủ</a><div class="brand">VKL • DICE</div></div>
+<header class="hero"><div class="eyebrow">TRÒ CHƠI MAY MẮN</div><h1>TÀI XỈU</h1><p>Ba viên xúc xắc • Chọn cửa • Đặt cược bằng Xu</p></header>
+<section class="panel">
+<div class="userline"><span id="account">Đang kiểm tra đăng nhập...</span><span class="balance" id="balance">— Xu</span></div>
+<div class="dice-area"><div class="die" id="die1">⚄</div><div class="die" id="die2">⚄</div><div class="die" id="die3">⚄</div></div>
+<div class="total">TỔNG ĐIỂM <strong id="total">—</strong></div>
+<div class="choices">
+<button class="choice" data-choice="tai">🔺 TÀI<small>11 đến 17 điểm</small></button>
+<button class="choice" data-choice="xiu">🔹 XỈU<small>4 đến 10 điểm</small></button>
+</div>
+<label for="bet">SỐ XU MUỐN CƯỢC</label>
+<input id="bet" type="number" min="1" step="1" inputmode="numeric" placeholder="Nhập số Xu cược">
+<div class="quick"><button data-bet="100">100 Xu</button><button data-bet="500">500 Xu</button><button data-bet="1000">1.000 Xu</button><button data-bet="5000">5.000 Xu</button><button data-bet="all">Tất cả</button></div>
+<button class="play" id="play" disabled>🎲 LẮC XÚC XẮC</button>
+<div class="result" id="result"></div>
+<p class="note">Tổng 4–10 là XỈU, 11–17 là TÀI. Nếu cả 3 viên giống nhau, lượt chơi hòa và hoàn lại tiền cược. Thắng được cộng số Xu bằng tiền cược.</p>
+<div class="history"><h2>🕘 LỊCH SỬ CHƠI</h2><div id="history">Chưa có lượt chơi.</div></div>
+</section></div>
+<script>
+(function(){
+const firebaseConfig={apiKey:"AIzaSyCSdvkb2q8TIDty0fCqOqkJ15KpmFy98sY",authDomain:"vukhonglong-9cfcb.firebaseapp.com",projectId:"vukhonglong-9cfcb",storageBucket:"vukhonglong-9cfcb.firebasestorage.app",messagingSenderId:"821726837864",appId:"1:821726837864:web:6228e0d8fe135eed8c4fdd",measurementId:"G-HL008X522E"};
+if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
+const auth=firebase.auth(),db=firebase.firestore(),WORKER_URL="https://vkl-lucky-wheel.haphamngu123.workers.dev";
+let user=null,choice="",balance=0,busy=false;
+const $=id=>document.getElementById(id),icons=["⚀","⚁","⚂","⚃","⚄","⚅"];
+function fmt(n){return Number(n||0).toLocaleString("vi-VN")}
+function setBalance(n){balance=n;$("balance").textContent=fmt(n)+" Xu"}
+async function request(action,data={}){if(!user)throw Error("Vui lòng đăng nhập lại.");const token=await user.getIdToken();const res=await fetch(WORKER_URL,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({action,...data})});let json={};try{json=await res.json()}catch{}if(!res.ok)throw Error(json.error||"Máy chủ đang bận.");return json}
+async function loadWallet(){const snap=await db.collection("wallets").doc(user.uid).get();if(!snap.exists)throw Error("Không tìm thấy ví Xu của tài khoản.");setBalance(Number(snap.data().coins||0))}
+async function loadHistory(){const box=$("history");try{const snap=await db.collection("diceHistory").where("uid","==",user.uid).limit(30).get();if(snap.empty){box.textContent="Chưa có lượt chơi.";return}const rows=snap.docs.map(d=>d.data()).sort((a,b)=>(b.createdAt?.toMillis?.()||0)-(a.createdAt?.toMillis?.()||0)).slice(0,10);box.innerHTML="";rows.forEach(d=>{const row=document.createElement("div");row.className="history-row";const left=document.createElement("span"),right=document.createElement("b");left.textContent=(d.dice||[]).join(" · ")+" = "+d.total+" • "+(d.choice==="tai"?"TÀI":"XỈU");right.textContent=d.result==="hoa"?"HÒA":(d.change>0?"+":"")+fmt(d.change)+" Xu";row.append(left,right);box.append(row)})}catch(e){box.textContent="Chưa tải được lịch sử: "+e.message}}
+document.querySelectorAll(".choice").forEach(btn=>btn.addEventListener("click",()=>{choice=btn.dataset.choice;document.querySelectorAll(".choice").forEach(x=>x.classList.toggle("active",x===btn))}));
+document.querySelectorAll("[data-bet]").forEach(btn=>btn.addEventListener("click",()=>{$("bet").value=btn.dataset.bet==="all"?balance:btn.dataset.bet}));
+$("play").addEventListener("click",async()=>{if(busy)return;const bet=Number($("bet").value);if(!choice){$("result").style.display="block";$("result").textContent="Bạn hãy chọn TÀI hoặc XỈU.";return}if(!Number.isSafeInteger(bet)||bet<1||bet>balance){$("result").style.display="block";$("result").textContent="Số Xu cược không hợp lệ hoặc vượt quá số dư.";return}
+busy=true;$("play").disabled=true;$("play").textContent="ĐANG LẮC...";$("result").style.display="none";document.querySelectorAll(".die").forEach(x=>x.classList.add("rolling"));
+let timer=setInterval(()=>{$("die1").textContent=icons[Math.floor(Math.random()*6)];$("die2").textContent=icons[Math.floor(Math.random()*6)];$("die3").textContent=icons[Math.floor(Math.random()*6)]},85);
+try{const data=await request("dice",{bet,choice,requestId:crypto.randomUUID().replace(/-/g,"")});clearInterval(timer);document.querySelectorAll(".die").forEach((x,i)=>{x.classList.remove("rolling");x.textContent=icons[data.dice[i]-1]});$("total").textContent=data.total;setBalance(data.balance);const label=data.result==="hoa"?"HÒA - HOÀN TIỀN":data.result==="thang"?"CHÚC MỪNG! BẠN THẮNG":"BẠN ĐÃ THUA";const delta=data.change===0?"Không thay đổi số dư":(data.change>0?"+" : "")+fmt(data.change)+" Xu";$("result").innerHTML="<strong>"+label+"</strong>"+(data.dice.join(" · "))+" = "+data.total+"<br>"+delta;$("result").style.display="block";await loadHistory()}catch(e){clearInterval(timer);document.querySelectorAll(".die").forEach(x=>x.classList.remove("rolling"));$("result").textContent=e.message;$("result").style.display="block";try{await loadWallet()}catch{}}finally{busy=false;$("play").disabled=!user;$("play").textContent="🎲 LẮC XÚC XẮC"}});
+auth.onAuthStateChanged(async u=>{user=u;if(!u){$("account").textContent="Bạn chưa đăng nhập";$("play").disabled=true;return}$("account").textContent="Đã đăng nhập: "+(u.displayName||u.email||"Tài khoản");try{await loadWallet();$("play").disabled=false;await loadHistory()}catch(e){$("account").textContent=e.message;$("play").disabled=true}});
+})();
+</script></body></html>
