@@ -170,73 +170,7 @@ export default {
       const documentRoot = "projects/" + env.FIREBASE_PROJECT_ID + "/databases/(default)/documents";
       const base = "https://firestore.googleapis.com/v1/" + documentRoot;
 
-      if (action === "dice") {
-        const bet = Number(body.bet);
-        const choice = String(body.choice || "").toLowerCase();
-        const requestId = String(body.requestId || "");
-        if (!Number.isSafeInteger(bet) || bet < 1 || bet > 1000000000) {
-          throw new Error("Mức cược không hợp lệ.");
-        }
-        if (choice !== "tai" && choice !== "xiu") throw new Error("Vui lòng chọn Tài hoặc Xỉu.");
-        if (!/^[A-Za-z0-9_-]{8,100}$/.test(requestId)) throw new Error("Mã lượt chơi không hợp lệ.");
-
-        const walletDocumentName = documentRoot + "/wallets/" + encodeURIComponent(user.uid);
-        const walletUrl = base + "/wallets/" + encodeURIComponent(user.uid);
-        const wallet = await firestoreRequest(walletUrl, token);
-        const fields = wallet.fields || {};
-        const currentCoins = Number(fields.coins?.integerValue ?? fields.coins?.doubleValue ?? 0);
-        if (!Number.isSafeInteger(currentCoins) || currentCoins < bet) throw new Error("Số dư Xu không đủ để cược.");
-
-        const bytes = new Uint32Array(3);
-        crypto.getRandomValues(bytes);
-        const dice = Array.from(bytes, n => (n % 6) + 1);
-        const total = dice.reduce((sum, n) => sum + n, 0);
-        const triple = dice[0] === dice[1] && dice[1] === dice[2];
-        const outcome = triple ? "hoa" : total >= 11 ? "tai" : "xiu";
-        const won = !triple && outcome === choice;
-        const balance = triple ? currentCoins : won ? currentCoins + bet : currentCoins - bet;
-        if (!Number.isSafeInteger(balance)) throw new Error("Số dư sau lượt chơi vượt giới hạn.");
-
-        const historyId = user.uid + "_" + requestId;
-        const historyName = documentRoot + "/diceHistory/" + encodeURIComponent(historyId);
-        const historyFields = {
-          uid: firestoreValue(user.uid),
-          game: firestoreValue("taiXiu"),
-          dice: { arrayValue: { values: dice.map(n => firestoreValue(n)) } },
-          total: firestoreValue(total),
-          choice: firestoreValue(choice),
-          bet: firestoreValue(bet),
-          outcome: firestoreValue(outcome),
-          result: firestoreValue(triple ? "hoa" : won ? "thang" : "thua"),
-          change: firestoreValue(triple ? 0 : won ? bet : -bet),
-          balanceAfter: firestoreValue(balance),
-          createdAt: { timestampValue: new Date().toISOString() }
-        };
-        const writes = [];
-        if (!triple) {
-          writes.push({
-            update: { name: walletDocumentName, fields: {
-              coins: firestoreValue(balance),
-              updatedAt: { timestampValue: new Date().toISOString() }
-            }},
-            updateMask: { fieldPaths: ["coins", "updatedAt"] },
-            currentDocument: { updateTime: wallet.updateTime }
-          });
-        }
-        writes.push({ update: { name: historyName, fields: historyFields }, currentDocument: { exists: false } });
-        await firestoreRequest(base + ":commit", token, {
-          method: "POST",
-          body: JSON.stringify({ writes })
-        });
-        return Response.json({
-          dice, total, choice, outcome,
-          result: triple ? "hoa" : won ? "thang" : "thua",
-          change: triple ? 0 : won ? bet : -bet,
-          balance
-        }, { status: 200, headers: cors });
-      }
-
-      if (action === "status") {
+            if (action === "status") {
         if (isAdmin) return Response.json({ isAdmin: true, dailyUsed: false, freeDailyEnabled: true, date }, { status: 200, headers: cors });
         const spinUrl = base + "/luckyWheelSpins/" + encodeURIComponent(user.uid + "_" + date);
         const settingsUrl = base + "/siteSettings/luckyWheel";
