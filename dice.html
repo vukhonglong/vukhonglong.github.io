@@ -15,8 +15,11 @@
 .hero{text-align:center;margin:22px 0}.eyebrow{color:#c79bff;font-weight:900;font-size:12px;letter-spacing:3px}.hero h1{font-size:clamp(28px,8vw,42px);margin:8px 0;background:linear-gradient(90deg,#fff,#d5a7ff,#ff8be9);background-clip:text;color:transparent}.hero p{color:var(--muted);font-size:13px;margin:0}
 .panel{background:linear-gradient(145deg,#1c122aee,#100b19ee);border:1px solid #4b2c69;border-radius:23px;padding:18px;box-shadow:0 15px 50px #0008}
 .userline{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:#d9c7ed;font-size:13px;margin-bottom:15px}.balance{color:#ffe18a;font-weight:900}
-.dice-area{display:flex;justify-content:center;gap:clamp(12px,4vw,24px);padding:25px 5px 30px;perspective:700px}
-.die{width:clamp(76px,22vw,108px);aspect-ratio:1;position:relative;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:5px;padding:13px;border-radius:23px;
+.dice-area{position:relative;height:205px;margin:12px auto 8px;max-width:430px;display:flex;align-items:center;justify-content:center;perspective:900px}
+.plate{position:absolute;width:min(94%,390px);height:132px;left:50%;top:58px;transform:translateX(-50%);border-radius:50%;background:radial-gradient(ellipse at 50% 38%,#fff9e9 0 45%,#d8c7a9 58%,#9b8063 68%,#ead9b9 74%,#80674f 82%,#3d2d27 88%);border:3px solid #f5e4c7;box-shadow:0 13px 20px #0009,inset 0 5px 8px #fff;z-index:0}
+.plate:after{content:"";position:absolute;inset:10px 18px;border:2px solid #b99d78;border-radius:50%;opacity:.7}
+.dice-set{position:absolute;z-index:2;top:76px;left:50%;transform:translateX(-50%);display:flex;justify-content:center;gap:clamp(10px,3vw,19px);width:90%;transition:transform .25s}
+.die{width:clamp(64px,19vw,94px);aspect-ratio:1;position:relative;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:5px;padding:12px;border-radius:20px;
  background:linear-gradient(145deg,#fff 0%,#f7f2ff 48%,#d9cbe9 100%);border:1px solid #fff;
  box-shadow:inset 3px 3px 7px #fff,inset -5px -6px 10px #b6a4ce,0 5px 0 #a18bad,0 10px 0 #705a83,0 18px 24px #0009;
  transform:rotateX(7deg) rotateY(-8deg);transition:transform .18s}
@@ -25,7 +28,19 @@
 .die .pip.on{opacity:1}
 .die.rolling{animation:diceRoll .18s infinite alternate}
 @keyframes diceRoll{from{transform:rotateX(12deg) rotateY(-12deg) translateY(-5px) rotate(-5deg)}to{transform:rotateX(-10deg) rotateY(12deg) translateY(4px) rotate(5deg)}}
-@media(max-width:360px){.die{padding:10px;gap:4px;border-radius:18px}}
+@media(max-width:360px){.die{padding:10px;gap:4px;border-radius:16px}.dice-area{height:185px}.plate{top:53px;height:116px}.dice-set{top:68px}}
+/* Bát úp trên đĩa */
+.bowl{position:absolute;z-index:5;left:50%;top:19px;width:min(70%,270px);height:137px;transform:translateX(-50%);transform-origin:50% 88%;border-radius:48% 48% 42% 42% / 58% 58% 32% 32%;background:radial-gradient(ellipse at 35% 20%,#fff 0,#e8edf4 18%,#aeb9ca 42%,#657187 68%,#30394b 88%,#171d2b 100%);border:3px solid #f2f5fb;box-shadow:inset 0 8px 13px #fff, inset -12px -13px 20px #20293c,0 13px 18px #000b;transition:transform .65s cubic-bezier(.2,.8,.2,1),opacity .3s}
+.bowl:before{content:"";position:absolute;left:8%;right:8%;bottom:-9px;height:22px;border-radius:50%;background:linear-gradient(180deg,#f8fbff,#8b98ac 45%,#30394b 100%);border:2px solid #e7edf7;box-shadow:0 5px 7px #0008}
+.bowl:after{content:"";position:absolute;left:25%;top:13%;width:34%;height:20%;border-radius:50%;background:#fff;filter:blur(9px);opacity:.55;transform:rotate(-25deg)}
+.dice-area.shaking .bowl,.dice-area.shaking .plate,.dice-area.shaking .dice-set{animation:tableShake .12s infinite alternate}
+.dice-area.shaking .bowl{animation:bowlShake .12s infinite alternate}
+@keyframes tableShake{from{translate:-2px 0}to{translate:2px 1px}}
+@keyframes bowlShake{from{transform:translateX(-50%) rotate(-3deg) translateY(-2px)}to{transform:translateX(-50%) rotate(3deg) translateY(2px)}}
+.dice-area.reveal .bowl{transform:translate(-50%,-190px) rotate(-12deg);opacity:0}
+.dice-area.reveal .dice-set{transform:translateX(-50%) translateY(3px)}
+.dice-area.reveal .plate{animation:plateSettle .35s ease-out}
+@keyframes plateSettle{0%{transform:translateX(-50%) scale(1.04)}100%{transform:translateX(-50%) scale(1)}}
 .total{text-align:center;color:#d9c7ed;font-size:14px}.total strong{font-size:24px;color:#fff;margin-left:6px}
 .choices{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:18px 0}.choice{border:2px solid #49315e;border-radius:16px;padding:15px 8px;background:#21142f;color:#fff;font-weight:1000;font-size:19px}.choice small{display:block;font-size:11px;color:#b9a7ca;margin-top:5px}.choice.active[data-choice="tai"]{border-color:#ff9a43;background:#482616;box-shadow:0 0 18px #ff9a4340}.choice.active[data-choice="xiu"]{border-color:#5aa8ff;background:#172e4c;box-shadow:0 0 18px #5aa8ff40}
 label{display:block;color:#d9c7ed;font-size:13px;font-weight:800;margin:14px 0 7px}input{width:100%;border:1px solid #50356a;background:#0e0916;color:white;border-radius:13px;padding:14px;font-size:17px;outline:none}input:focus{border-color:#b77aff}
@@ -41,7 +56,7 @@ label{display:block;color:#d9c7ed;font-size:13px;font-weight:800;margin:14px 0 7
 <header class="hero"><div class="eyebrow">TRÒ CHƠI MAY MẮN</div><h1>TÀI XỈU</h1><p>Ba viên xúc xắc • Chọn cửa • Đặt cược bằng Xu</p></header>
 <section class="panel">
 <div class="userline"><span id="account">Đang kiểm tra đăng nhập...</span><span class="balance" id="balance">— Xu</span></div>
-<div class="dice-area"><div class="die" id="die1" aria-label="Xúc xắc 1"></div><div class="die" id="die2" aria-label="Xúc xắc 2"></div><div class="die" id="die3" aria-label="Xúc xắc 3"></div></div>
+<div class="dice-area" id="diceArea"><div class="plate"></div><div class="dice-set"><div class="die" id="die1" aria-label="Xúc xắc 1"></div><div class="die" id="die2" aria-label="Xúc xắc 2"></div><div class="die" id="die3" aria-label="Xúc xắc 3"></div></div><div class="bowl" aria-hidden="true"></div></div>
 <div class="total">TỔNG ĐIỂM <strong id="total">—</strong></div>
 <div class="choices">
 <button class="choice" data-choice="tai">🔺 TÀI<small>11 đến 17 điểm</small></button>
@@ -72,9 +87,9 @@ async function loadHistory(){const box=$("history");try{const snap=await db.coll
 document.querySelectorAll(".choice").forEach(btn=>btn.addEventListener("click",()=>{choice=btn.dataset.choice;document.querySelectorAll(".choice").forEach(x=>x.classList.toggle("active",x===btn))}));
 document.querySelectorAll("[data-bet]").forEach(btn=>btn.addEventListener("click",()=>{$("bet").value=btn.dataset.bet==="all"?balance:btn.dataset.bet}));
 $("play").addEventListener("click",async()=>{if(busy)return;const bet=Number($("bet").value);if(!choice){$("result").style.display="block";$("result").textContent="Bạn hãy chọn TÀI hoặc XỈU.";return}if(!Number.isSafeInteger(bet)||bet<1||bet>balance){$("result").style.display="block";$("result").textContent="Số Xu cược không hợp lệ hoặc vượt quá số dư.";return}
-busy=true;$("play").disabled=true;$("play").textContent="ĐANG LẮC...";$("result").style.display="none";document.querySelectorAll(".die").forEach(x=>x.classList.add("rolling"));
+busy=true;$("play").disabled=true;$("play").textContent="ĐANG LẮC...";$("result").style.display="none";$("diceArea").classList.remove("reveal");$("diceArea").classList.add("shaking");document.querySelectorAll(".die").forEach(x=>x.classList.add("rolling"));
 let timer=setInterval(()=>{["die1","die2","die3"].forEach(id=>renderDie($(id),1+Math.floor(Math.random()*6)))},85);
-try{const data=await request("dice",{bet,choice,requestId:crypto.randomUUID().replace(/-/g,"")});clearInterval(timer);document.querySelectorAll(".die").forEach((x,i)=>{x.classList.remove("rolling");renderDie(x,data.dice[i])});$("total").textContent=data.total;setBalance(data.balance);const label=data.result==="hoa"?"HÒA - HOÀN TIỀN":data.result==="thang"?"CHÚC MỪNG! BẠN THẮNG":"BẠN ĐÃ THUA";const delta=data.change===0?"Không thay đổi số dư":(data.change>0?"+" : "")+fmt(data.change)+" Xu";$("result").innerHTML="<strong>"+label+"</strong>"+(data.dice.join(" · "))+" = "+data.total+"<br>"+delta;$("result").style.display="block";await loadHistory()}catch(e){clearInterval(timer);document.querySelectorAll(".die").forEach(x=>x.classList.remove("rolling"));$("result").textContent=e.message;$("result").style.display="block";try{await loadWallet()}catch{}}finally{busy=false;$("play").disabled=!user;$("play").textContent="🎲 LẮC XÚC XẮC"}});
+try{const data=await request("dice",{bet,choice,requestId:crypto.randomUUID().replace(/-/g,"")});clearInterval(timer);document.querySelectorAll(".die").forEach((x,i)=>{x.classList.remove("rolling");renderDie(x,data.dice[i])});$("diceArea").classList.remove("shaking");$("diceArea").classList.add("reveal");$("total").textContent=data.total;setBalance(data.balance);const label=data.result==="hoa"?"HÒA - HOÀN TIỀN":data.result==="thang"?"CHÚC MỪNG! BẠN THẮNG":"BẠN ĐÃ THUA";const delta=data.change===0?"Không thay đổi số dư":(data.change>0?"+" : "")+fmt(data.change)+" Xu";$("result").innerHTML="<strong>"+label+"</strong>"+(data.dice.join(" · "))+" = "+data.total+"<br>"+delta;$("result").style.display="block";await loadHistory()}catch(e){clearInterval(timer);$("diceArea").classList.remove("shaking");$("diceArea").classList.add("reveal");document.querySelectorAll(".die").forEach(x=>x.classList.remove("rolling"));$("result").textContent=e.message;$("result").style.display="block";try{await loadWallet()}catch{}}finally{busy=false;$("play").disabled=!user;$("play").textContent="🎲 LẮC XÚC XẮC"}});
 ["die1","die2","die3"].forEach(id=>renderDie($(id),5));
 auth.onAuthStateChanged(async u=>{user=u;if(!u){$("account").textContent="Bạn chưa đăng nhập";$("play").disabled=true;return}$("account").textContent="Đã đăng nhập: "+(u.displayName||u.email||"Tài khoản");try{await loadWallet();$("play").disabled=false;await loadHistory()}catch(e){$("account").textContent=e.message;$("play").disabled=true}});
 })();
