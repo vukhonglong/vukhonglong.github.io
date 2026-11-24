@@ -15,8 +15,17 @@
 .hero{text-align:center;margin:22px 0}.eyebrow{color:#c79bff;font-weight:900;font-size:12px;letter-spacing:3px}.hero h1{font-size:clamp(28px,8vw,42px);margin:8px 0;background:linear-gradient(90deg,#fff,#d5a7ff,#ff8be9);background-clip:text;color:transparent}.hero p{color:var(--muted);font-size:13px;margin:0}
 .panel{background:linear-gradient(145deg,#1c122aee,#100b19ee);border:1px solid #4b2c69;border-radius:23px;padding:18px;box-shadow:0 15px 50px #0008}
 .userline{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:#d9c7ed;font-size:13px;margin-bottom:15px}.balance{color:#ffe18a;font-weight:900}
-.dice-area{display:flex;justify-content:center;gap:12px;padding:22px 5px}.die{width:clamp(72px,21vw,104px);aspect-ratio:1;border-radius:20px;background:linear-gradient(145deg,#fff,#d8cce8);color:#311b48;display:grid;place-items:center;font-size:clamp(42px,12vw,62px);font-weight:1000;box-shadow:0 8px 0 #9d82b7,0 14px 25px #0007;border:3px solid #fff}
-.die.rolling{animation:shake .14s infinite alternate}@keyframes shake{from{transform:rotate(-8deg) translateY(-3px)}to{transform:rotate(8deg) translateY(3px)}}
+.dice-area{display:flex;justify-content:center;gap:clamp(12px,4vw,24px);padding:25px 5px 30px;perspective:700px}
+.die{width:clamp(76px,22vw,108px);aspect-ratio:1;position:relative;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);gap:5px;padding:13px;border-radius:23px;
+ background:linear-gradient(145deg,#fff 0%,#f7f2ff 48%,#d9cbe9 100%);border:1px solid #fff;
+ box-shadow:inset 3px 3px 7px #fff,inset -5px -6px 10px #b6a4ce,0 5px 0 #a18bad,0 10px 0 #705a83,0 18px 24px #0009;
+ transform:rotateX(7deg) rotateY(-8deg);transition:transform .18s}
+.die:before{content:"";position:absolute;inset:5px;border-radius:18px;border:1px solid #ffffffb8;pointer-events:none}
+.pip{width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 32% 28%,#ffaaa8 0,#ed454e 32%,#b70e2d 100%);box-shadow:inset 1px 2px 3px #ffffff70,0 1px 2px #6b0927;opacity:0}
+.die .pip.on{opacity:1}
+.die.rolling{animation:diceRoll .18s infinite alternate}
+@keyframes diceRoll{from{transform:rotateX(12deg) rotateY(-12deg) translateY(-5px) rotate(-5deg)}to{transform:rotateX(-10deg) rotateY(12deg) translateY(4px) rotate(5deg)}}
+@media(max-width:360px){.die{padding:10px;gap:4px;border-radius:18px}}
 .total{text-align:center;color:#d9c7ed;font-size:14px}.total strong{font-size:24px;color:#fff;margin-left:6px}
 .choices{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:18px 0}.choice{border:2px solid #49315e;border-radius:16px;padding:15px 8px;background:#21142f;color:#fff;font-weight:1000;font-size:19px}.choice small{display:block;font-size:11px;color:#b9a7ca;margin-top:5px}.choice.active[data-choice="tai"]{border-color:#ff9a43;background:#482616;box-shadow:0 0 18px #ff9a4340}.choice.active[data-choice="xiu"]{border-color:#5aa8ff;background:#172e4c;box-shadow:0 0 18px #5aa8ff40}
 label{display:block;color:#d9c7ed;font-size:13px;font-weight:800;margin:14px 0 7px}input{width:100%;border:1px solid #50356a;background:#0e0916;color:white;border-radius:13px;padding:14px;font-size:17px;outline:none}input:focus{border-color:#b77aff}
@@ -32,7 +41,7 @@ label{display:block;color:#d9c7ed;font-size:13px;font-weight:800;margin:14px 0 7
 <header class="hero"><div class="eyebrow">TRÒ CHƠI MAY MẮN</div><h1>TÀI XỈU</h1><p>Ba viên xúc xắc • Chọn cửa • Đặt cược bằng Xu</p></header>
 <section class="panel">
 <div class="userline"><span id="account">Đang kiểm tra đăng nhập...</span><span class="balance" id="balance">— Xu</span></div>
-<div class="dice-area"><div class="die" id="die1">⚄</div><div class="die" id="die2">⚄</div><div class="die" id="die3">⚄</div></div>
+<div class="dice-area"><div class="die" id="die1" aria-label="Xúc xắc 1"></div><div class="die" id="die2" aria-label="Xúc xắc 2"></div><div class="die" id="die3" aria-label="Xúc xắc 3"></div></div>
 <div class="total">TỔNG ĐIỂM <strong id="total">—</strong></div>
 <div class="choices">
 <button class="choice" data-choice="tai">🔺 TÀI<small>11 đến 17 điểm</small></button>
@@ -52,7 +61,9 @@ const firebaseConfig={apiKey:"AIzaSyCSdvkb2q8TIDty0fCqOqkJ15KpmFy98sY",authDomai
 if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
 const auth=firebase.auth(),db=firebase.firestore(),WORKER_URL="https://vkl-lucky-wheel.haphamngu123.workers.dev";
 let user=null,choice="",balance=0,busy=false;
-const $=id=>document.getElementById(id),icons=["⚀","⚁","⚂","⚃","⚄","⚅"];
+const $=id=>document.getElementById(id);
+const pipMap={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function renderDie(el,n){el.innerHTML="";for(let i=0;i<9;i++){const pip=document.createElement("span");pip.className="pip"+(pipMap[n].includes(i)?" on":"");el.append(pip)}}
 function fmt(n){return Number(n||0).toLocaleString("vi-VN")}
 function setBalance(n){balance=n;$("balance").textContent=fmt(n)+" Xu"}
 async function request(action,data={}){if(!user)throw Error("Vui lòng đăng nhập lại.");const token=await user.getIdToken();const res=await fetch(WORKER_URL,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},body:JSON.stringify({action,...data})});let json={};try{json=await res.json()}catch{}if(!res.ok)throw Error(json.error||"Máy chủ đang bận.");return json}
@@ -62,8 +73,8 @@ document.querySelectorAll(".choice").forEach(btn=>btn.addEventListener("click",(
 document.querySelectorAll("[data-bet]").forEach(btn=>btn.addEventListener("click",()=>{$("bet").value=btn.dataset.bet==="all"?balance:btn.dataset.bet}));
 $("play").addEventListener("click",async()=>{if(busy)return;const bet=Number($("bet").value);if(!choice){$("result").style.display="block";$("result").textContent="Bạn hãy chọn TÀI hoặc XỈU.";return}if(!Number.isSafeInteger(bet)||bet<1||bet>balance){$("result").style.display="block";$("result").textContent="Số Xu cược không hợp lệ hoặc vượt quá số dư.";return}
 busy=true;$("play").disabled=true;$("play").textContent="ĐANG LẮC...";$("result").style.display="none";document.querySelectorAll(".die").forEach(x=>x.classList.add("rolling"));
-let timer=setInterval(()=>{$("die1").textContent=icons[Math.floor(Math.random()*6)];$("die2").textContent=icons[Math.floor(Math.random()*6)];$("die3").textContent=icons[Math.floor(Math.random()*6)]},85);
-try{const data=await request("dice",{bet,choice,requestId:crypto.randomUUID().replace(/-/g,"")});clearInterval(timer);document.querySelectorAll(".die").forEach((x,i)=>{x.classList.remove("rolling");x.textContent=icons[data.dice[i]-1]});$("total").textContent=data.total;setBalance(data.balance);const label=data.result==="hoa"?"HÒA - HOÀN TIỀN":data.result==="thang"?"CHÚC MỪNG! BẠN THẮNG":"BẠN ĐÃ THUA";const delta=data.change===0?"Không thay đổi số dư":(data.change>0?"+" : "")+fmt(data.change)+" Xu";$("result").innerHTML="<strong>"+label+"</strong>"+(data.dice.join(" · "))+" = "+data.total+"<br>"+delta;$("result").style.display="block";await loadHistory()}catch(e){clearInterval(timer);document.querySelectorAll(".die").forEach(x=>x.classList.remove("rolling"));$("result").textContent=e.message;$("result").style.display="block";try{await loadWallet()}catch{}}finally{busy=false;$("play").disabled=!user;$("play").textContent="🎲 LẮC XÚC XẮC"}});
-auth.onAuthStateChanged(async u=>{user=u;if(!u){$("account").textContent="Bạn chưa đăng nhập";$("play").disabled=true;return}$("account").textContent="Đã đăng nhập: "+(u.displayName||u.email||"Tài khoản");try{await loadWallet();$("play").disabled=false;await loadHistory()}catch(e){$("account").textContent=e.message;$("play").disabled=true}});
+let timer=setInterval(()=>{["die1","die2","die3"].forEach(id=>renderDie($(id),1+Math.floor(Math.random()*6)))},85);
+try{const data=await request("dice",{bet,choice,requestId:crypto.randomUUID().replace(/-/g,"")});clearInterval(timer);document.querySelectorAll(".die").forEach((x,i)=>{x.classList.remove("rolling");renderDie(x,data.dice[i])});$("total").textContent=data.total;setBalance(data.balance);const label=data.result==="hoa"?"HÒA - HOÀN TIỀN":data.result==="thang"?"CHÚC MỪNG! BẠN THẮNG":"BẠN ĐÃ THUA";const delta=data.change===0?"Không thay đổi số dư":(data.change>0?"+" : "")+fmt(data.change)+" Xu";$("result").innerHTML="<strong>"+label+"</strong>"+(data.dice.join(" · "))+" = "+data.total+"<br>"+delta;$("result").style.display="block";await loadHistory()}catch(e){clearInterval(timer);document.querySelectorAll(".die").forEach(x=>x.classList.remove("rolling"));$("result").textContent=e.message;$("result").style.display="block";try{await loadWallet()}catch{}}finally{busy=false;$("play").disabled=!user;$("play").textContent="🎲 LẮC XÚC XẮC"}});
+["die1","die2","die3"].forEach(id=>renderDie($(id),5));\nauth.onAuthStateChanged(async u=>{user=u;if(!u){$("account").textContent="Bạn chưa đăng nhập";$("play").disabled=true;return}$("account").textContent="Đã đăng nhập: "+(u.displayName||u.email||"Tài khoản");try{await loadWallet();$("play").disabled=false;await loadHistory()}catch(e){$("account").textContent=e.message;$("play").disabled=true}});
 })();
 </script></body></html>
