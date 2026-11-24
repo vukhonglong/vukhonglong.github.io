@@ -149,7 +149,7 @@ function firestoreValue(value) {
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
-    if (request.method === "GET") return Response.json({ service: "vkl-lucky-wheel", version: "2026-11-23-wallet-url-fix", walletRead: "full-url", walletWrite: "document-resource-name" }, { status: 200, headers: cors });
+    if (request.method === "GET") return Response.json({ service: "vkl-lucky-wheel", version: "2026-11-24-daily-reset", mode: "one-spin-per-day-vietnam-time" }, { status: 200, headers: cors });
     if (request.method !== "POST") return Response.json({ error: "Method not allowed" }, { status: 405, headers: cors });
 
     try {
