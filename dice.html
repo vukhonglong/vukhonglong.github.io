@@ -28,14 +28,16 @@
 .die .pip.on{opacity:1}
 .die.rolling{animation:diceRoll .18s infinite alternate}
 @keyframes diceRoll{from{transform:rotateX(12deg) rotateY(-12deg) translateY(-5px) rotate(-5deg)}to{transform:rotateX(-10deg) rotateY(12deg) translateY(4px) rotate(5deg)}}
-@media(max-width:360px){.die{width:45px;padding:7px;gap:3px;border-radius:12px}.dice-area{height:250px}.plate{top:0;width:220px;height:220px}.dice-set{top:60px;width:130px;gap:3px}.bowl{height:185px;width:min(82%,300px);top:0}}
-/* Bát lắc kiểu bàn Tài Xỉu */
-.bowl{position:absolute;z-index:5;left:50%;top:-5px;width:min(82%,330px);height:205px;transform:translateX(-50%);transform-origin:50% 90%;border-radius:50% 50% 47% 47% / 48% 48% 52% 52%;background:radial-gradient(ellipse at 38% 24%,#541010 0%,#300606 42%,#160303 78%,#050202 100%);border:9px solid #64131d;box-shadow:inset 7px 8px 18px #ff777733,inset -14px -17px 28px #000,0 12px 24px #000c;transition:transform .65s cubic-bezier(.2,.8,.2,1),opacity .3s}.bowl:before{content:"";position:absolute;left:-8px;right:-8px;bottom:-7px;height:30px;border-radius:50%;border:7px solid #8b2630;background:linear-gradient(180deg,#3c080d,#100204 70%,#000);box-shadow:0 5px 9px #000a,inset 0 3px 5px #ffffff30}.bowl:after{content:"";position:absolute;left:20%;top:10%;width:36%;height:16%;border-radius:50%;background:linear-gradient(100deg,#d58b8b66,transparent);filter:blur(10px);opacity:.4;transform:rotate(-28deg)}
+@media(max-width:360px){.die{width:45px;padding:7px;gap:3px;border-radius:12px}.dice-area{height:250px}.plate{top:0;width:220px;height:220px}.dice-set{top:60px;width:130px;gap:3px}.bowl{width:min(80%,176px);top:50%;height:auto}}
+/* Bát tròn nhìn từ trên xuống, phủ khoảng 80% mặt đĩa */
+.bowl{position:absolute;z-index:5;left:50%;top:50%;width:min(80%,216px);height:auto;aspect-ratio:1;transform:translate(-50%,-50%);transform-origin:center;border-radius:50%;background:radial-gradient(circle,#090303 0 68%,#210407 72%,#5c101a 78%,#9b2633 83%,#3b090f 89%,#100204 100%);border:5px solid #741b27;box-shadow:inset 0 0 0 3px #25060b,inset 0 0 18px #000,0 10px 22px #000c;transition:transform .65s cubic-bezier(.2,.8,.2,1),opacity .3s}
+.bowl:before{content:"";position:absolute;inset:7px;border-radius:50%;border:3px solid #a43b48;box-shadow:inset 0 0 0 3px #30070d,0 0 0 2px #27060a}
+.bowl:after{content:"";position:absolute;left:24%;top:14%;width:32%;height:12%;border-radius:50%;background:linear-gradient(90deg,#d58b8b55,transparent);filter:blur(9px);opacity:.3;transform:rotate(-25deg)}
 .dice-area.shaking .bowl,.dice-area.shaking .plate,.dice-area.shaking .dice-set{animation:tableShake .12s infinite alternate}
 .dice-area.shaking .bowl{animation:bowlShake .12s infinite alternate}
 @keyframes tableShake{from{translate:-2px 0}to{translate:2px 1px}}
 @keyframes bowlShake{from{transform:translateX(-50%) rotate(-3deg) translateY(-2px)}to{transform:translateX(-50%) rotate(3deg) translateY(2px)}}
-.dice-area.reveal .bowl{transform:translate(-50%,-235px) rotate(-12deg);opacity:0}
+.dice-area.reveal .bowl{transform:translate(-50%,-190px) rotate(-12deg);opacity:0}
 .dice-area.reveal .dice-set{transform:translateX(-50%) translateY(3px)}
 .dice-area.reveal .plate{animation:plateSettle .35s ease-out}
 @keyframes plateSettle{0%{transform:translateX(-50%) scale(1.04)}100%{transform:translateX(-50%) scale(1)}}
@@ -46,7 +48,7 @@ label{display:block;color:#d9c7ed;font-size:13px;font-weight:800;margin:14px 0 7
 .play{width:100%;border:0;border-radius:15px;padding:16px;background:linear-gradient(100deg,#8d3be5,#d83fc8);color:white;font-size:17px;font-weight:1000;letter-spacing:1px;box-shadow:0 8px 25px #a43de955;margin-top:17px}.play:disabled{opacity:.5}
 .result{display:none;text-align:center;margin-top:16px;padding:16px;border:1px solid #9954cb;border-radius:15px;background:#28143b;line-height:1.7}.result strong{display:block;font-size:23px;color:#ffe18a}
 .note{text-align:center;color:#a995bb;font-size:11px;line-height:1.6;margin:14px 4px 0}.history{margin-top:18px}.history h2{font-size:16px}.history-row{display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid #332141;color:#cbb8dd;font-size:12px}.history-row b{color:#fff}
-@media(max-width:390px){.panel{padding:14px}.die{border-radius:13px}.choices{gap:8px}}@media(min-width:361px){.dice-area{height:275px}.plate{top:0}.dice-set{top:68px;width:155px}.bowl{height:215px}}
+@media(max-width:390px){.panel{padding:14px}.die{border-radius:13px}.choices{gap:8px}}@media(min-width:361px){.dice-area{height:275px}.plate{top:0}.dice-set{top:68px;width:155px}.bowl{width:min(80%,216px);height:auto}}
 </style>
 </head>
 <body><div class="wrap">
