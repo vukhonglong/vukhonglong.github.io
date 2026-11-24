@@ -162,23 +162,43 @@ export default {
       if (!match) return Response.json({ error: "Vui lòng đăng nhập lại." }, { status: 401, headers: cors });
 
       const body = await request.json();
+      const action = body.action || "spin";
+      const user = await verifyFirebaseUser(match[1]);
+      const isAdmin = user.email === ADMIN_EMAIL && user.emailVerified;
+      const date = vietnamDateKey();
+      const token = await googleAccessToken(env);
+      const documentRoot = "projects/" + env.FIREBASE_PROJECT_ID + "/databases/(default)/documents";
+      const base = "https://firestore.googleapis.com/v1/" + documentRoot;
+
+      if (action === "status") {
+        if (isAdmin) return Response.json({ isAdmin: true, dailyUsed: false, freeDailyEnabled: true, date }, { status: 200, headers: cors });
+        const spinUrl = base + "/luckyWheelSpins/" + encodeURIComponent(user.uid + "_" + date);
+        const settingsUrl = base + "/siteSettings/luckyWheel";
+        const [spinResponse, settingsResponse] = await Promise.all([
+          fetch(spinUrl, { headers: { Authorization: "Bearer " + token } }),
+          fetch(settingsUrl, { headers: { Authorization: "Bearer " + token } })
+        ]);
+        if (!spinResponse.ok && spinResponse.status !== 404) throw new Error("Không kiểm tra được lượt quay hôm nay.");
+        if (!settingsResponse.ok) throw new Error("Không tải được cấu hình vòng quay.");
+        const settingsData = await settingsResponse.json();
+        const freeDailyEnabled = !(settingsData.fields && settingsData.fields.freeDailyEnabled && settingsData.fields.freeDailyEnabled.booleanValue === false);
+        return Response.json({ isAdmin: false, dailyUsed: spinResponse.ok, freeDailyEnabled, date }, { status: 200, headers: cors });
+      }
+
+      if (action !== "spin") return Response.json({ error: "Thao tác không hợp lệ." }, { status: 400, headers: cors });
       const requestId = String(body.requestId || "");
       if (!/^[A-Za-z0-9_-]{8,100}$/.test(requestId)) {
         return Response.json({ error: "Mã lượt quay không hợp lệ." }, { status: 400, headers: cors });
       }
-
-      const user = await verifyFirebaseUser(match[1]);
-      const isAdmin = user.email === ADMIN_EMAIL && user.emailVerified;
-      const date = vietnamDateKey();
       const spinId = isAdmin ? user.uid + "_admin_" + requestId : user.uid + "_" + date;
-      const token = await googleAccessToken(env);
-      const documentRoot = "projects/" + env.FIREBASE_PROJECT_ID + "/databases/(default)/documents";
-      const base = "https://firestore.googleapis.com/v1/" + documentRoot;
       const settings = await firestoreRequest(base + "/siteSettings/luckyWheel", token);
       const rawPrizes = settings.fields && settings.fields.prizes && settings.fields.prizes.arrayValue
         ? (settings.fields.prizes.arrayValue.values || []).map(v => v.stringValue || "")
         : [];
       const prizes = parsePrizes(rawPrizes);
+      if (!isAdmin && settings.fields && settings.fields.freeDailyEnabled && settings.fields.freeDailyEnabled.booleanValue === false) {
+        throw new Error("Lượt quay miễn phí hôm nay đang tạm khóa.");
+      }
 
       const spinName = base + "/luckyWheelSpins/" + encodeURIComponent(spinId);
       const existing = await fetch(spinName, { headers: { Authorization: "Bearer " + token } });
