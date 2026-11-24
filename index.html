@@ -3994,6 +3994,31 @@ window.saveCustomerDisplayName = async function() {
       displayName: name,
       displayNameUpdatedAt: firebase.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
+
+    // Đồng bộ tên mới vào các đánh giá cũ của chính tài khoản này.
+    const reviewCollection = firebase.firestore().collection("reviews");
+    const legacyName = (user.email || "").split("@")[0];
+    const [ownedReviews, legacyReviews] = await Promise.all([
+      reviewCollection.where("uid", "==", user.uid).get(),
+      legacyName && legacyName !== name
+        ? reviewCollection.where("name", "==", legacyName).get()
+        : Promise.resolve(null)
+    ]);
+    const reviewDocs = new Map();
+    ownedReviews.forEach(doc => reviewDocs.set(doc.id, doc.ref));
+    if (legacyReviews) {
+      legacyReviews.forEach(doc => {
+        if (!doc.data().uid || doc.data().uid === user.uid) {
+          reviewDocs.set(doc.id, doc.ref);
+        }
+      });
+    }
+    if (reviewDocs.size) {
+      const batch = firebase.firestore().batch();
+      reviewDocs.forEach(ref => batch.update(ref, { name, displayName: name, uid: user.uid }));
+      await batch.commit();
+    }
+
     const title = document.getElementById("vkl-account-display-name");
     const homeName = document.getElementById("home-info-name");
     if (title) title.textContent = name;
@@ -5936,7 +5961,7 @@ if (!firebase.apps.length) {
         const data = doc.data();
         const item = document.createElement("div");
         item.className = "vkl-review-item";
-const rawName = String(data.name || "Khách").trim() || "Khách";
+const rawName = String(data.displayName || data.name || "Khách").trim() || "Khách";
 const name = document.createElement("strong");
 name.style.cssText = "display:block;color:#dbe4ff;font-size:13px;margin-bottom:4px;";
 name.textContent = rawName.slice(0, 2) + "••••";
@@ -6006,8 +6031,15 @@ const accountName = user
   ? (user.email || user.displayName || "Khách").split("@")[0]
   : "Khách";
 
+const walletSnap = await firebase.firestore().collection("wallets").doc(user.uid).get();
+const currentDisplayName = walletSnap.exists
+  ? String(walletSnap.data().displayName || accountName)
+  : accountName;
+
 await reviews.add({
-  name: accountName,
+  uid: user.uid,
+  name: currentDisplayName,
+  displayName: currentDisplayName,
   rating: selectedRating,
   comment: comment,
   createdAt: firebase.firestore.FieldValue.serverTimestamp()
