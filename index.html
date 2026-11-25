@@ -1328,6 +1328,22 @@ body.dark .nav.home-tabs button:active { color:#f1f3fa!important; background:tra
 .wheel-bottom-link .wheel-copy { min-width:0; line-height:1.2; }
 .wheel-bottom-link b { display:block; font-size:12px; white-space:nowrap; }
 .wheel-bottom-link small { display:block; margin-top:3px; font-size:9px; color:#626b7a; white-space:nowrap; }
+.wheel-brand-only { display:none; }
+.wheel-bottom-bar.other-main-tab { pointer-events:none; }
+.wheel-bottom-bar.other-main-tab .home-wheel-only { display:none; }
+.wheel-bottom-bar.other-main-tab .wheel-brand-only {
+  display:flex; align-items:center; justify-content:center;
+  width:100%; min-width:0; margin-left:-20px;
+  color:transparent; font-size:14px; font-weight:900;
+  line-height:1.2; white-space:nowrap;
+  background:linear-gradient(90deg,#ffffff 0%,#76e7ff 24%,#c99bff 48%,#ffffff 72%,#76e7ff 100%);
+  background-size:250% auto; background-clip:text; -webkit-background-clip:text;
+  animation:wheelBrandColor 4s linear infinite;
+}
+@keyframes wheelBrandColor {
+  from { background-position:0% center; }
+  to { background-position:250% center; }
+}
 body.dark .wheel-bottom-bar {
   background:#171d2eee; border-color:#303951;
 }
@@ -1672,6 +1688,7 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
     <span class="wheel-icon">🎡</span>
     <span class="wheel-copy"><b>VÒNG QUAY MAY MẮN</b><small>Quay miễn phí • Nhận Xu</small></span>
   </span>
+  <span class="wheel-brand-only">VuKhongLong Never Die</span>
 </a>
 
 <div class="bottom">
@@ -3039,6 +3056,7 @@ if(
  type === "progress"
 ){
  modal.classList.add("page-mode");
+ document.getElementById("homeWheelBanner")?.classList.add("other-main-tab");
 
  body.insertAdjacentHTML("afterbegin", `
   <button onclick="closeModal()" class="vkl-admin-back" style="display:inline-flex;align-items:center;justify-content:flex-start;width:fit-content;min-width:0;min-height:0;padding:10px 12px;margin:0 0 12px;border:1px solid ${document.body.classList.contains("dark") ? "#52617f" : "#aeb5c1"};border-radius:10px;background:${document.body.classList.contains("dark") ? "#293650" : "#cfd3dc"};color:${document.body.classList.contains("dark") ? "#ffffff" : "#222936"};font-size:14px;font-weight:800;line-height:1.3;text-align:left;box-shadow:none">
@@ -3047,6 +3065,7 @@ if(
  `);
 } else {
  modal.classList.remove("page-mode");
+ document.getElementById("homeWheelBanner")?.classList.remove("other-main-tab");
 }
 
 modal.classList.add("show");
@@ -3087,6 +3106,7 @@ function closeModal(){
  const modal = document.getElementById("modal");
  modal.classList.remove("show");
  modal.classList.remove("page-mode");
+ document.getElementById("homeWheelBanner")?.classList.remove("other-main-tab");
 }
 function openMainTab(type){
  openModal(type);
