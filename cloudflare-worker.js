@@ -261,6 +261,7 @@ export default {
       return Response.json({
         prize: selected.label,
         prizeIndex,
+        prizes: prizes.map(prize => ({ label: prize.label, weight: prize.weight })),
         coinsAwarded: selected.coins,
         balance: newBalance,
         date
