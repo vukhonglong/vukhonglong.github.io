@@ -1333,10 +1333,15 @@ body.dark .nav.home-tabs button:active { color:#f1f3fa!important; background:tra
 .wheel-bottom-bar.other-main-tab .home-wheel-only { display:none; }
 .wheel-bottom-bar.other-main-tab .wheel-brand-only {
   display:flex; align-items:center; justify-content:center;
-  width:min(48vw,280px); min-width:0; margin-left:0;
+  width:min(48vw,280px); min-width:0; min-height:48px;
+  margin-left:0; padding:8px 12px; border-radius:14px;
+  background:#d1d5dd; border:1px solid #b8bec9;
+  box-shadow:0 3px 10px #17203312;
+}
+.wheel-brand-only span {
   color:transparent; font-size:12px; font-weight:900;
   line-height:1.2; white-space:nowrap;
-  background:linear-gradient(90deg,#ffffff 0%,#76e7ff 24%,#c99bff 48%,#ffffff 72%,#76e7ff 100%);
+  background-image:linear-gradient(90deg,#ffffff 0%,#76e7ff 24%,#c99bff 48%,#ffffff 72%,#76e7ff 100%);
   background-size:250% auto; background-clip:text; -webkit-background-clip:text;
   animation:wheelBrandColor 4s linear infinite;
 }
@@ -1353,7 +1358,7 @@ body.dark .wheel-bottom-link {
 }
 body.dark .wheel-bottom-link small { color:#b3bdd4; }
 @media(max-width:370px) {
-  .wheel-bottom-link { width:48vw; padding:7px 8px; gap:6px; }
+  .wheel-bottom-link, .wheel-bottom-bar.other-main-tab .wheel-brand-only { width:48vw; padding:7px 8px; gap:6px; }
   .wheel-bottom-link .wheel-icon { font-size:21px; }
   .wheel-bottom-link b { font-size:11px; }
   .wheel-bottom-link small { font-size:8px; }
@@ -1688,7 +1693,7 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
     <span class="wheel-icon">🎡</span>
     <span class="wheel-copy"><b>VÒNG QUAY MAY MẮN</b><small>Quay miễn phí • Nhận Xu</small></span>
   </span>
-  <span class="wheel-brand-only">VuKhongLong Never Die</span>
+  <span class="wheel-brand-only"><span>VuKhongLong Never Die</span></span>
 </a>
 
 <div class="bottom">
