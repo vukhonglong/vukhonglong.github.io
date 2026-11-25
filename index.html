@@ -1825,7 +1825,7 @@ const PACKAGES = {
 let selected = "";
 
 function money(n){
- return new Intl.NumberFormat("vi-VN").format(n) + "đ";
+ return new Intl.NumberFormat("vi-VN").format(n) + " Xu";
 }
 
 function numberFormat(n){
@@ -2578,7 +2578,7 @@ ${isOwnerAccount ? `
     <div class="vkl-referral-heading">
       <div style="font-size:42px">🎁</div>
       <h3>GIỚI THIỆU BẠN BÈ</h3>
-      <p>Chia sẻ mã của bạn và nhận thưởng <strong>5.000 VNĐ</strong> khi lời mời được duyệt.</p>
+      <p>Chia sẻ mã của bạn và nhận thưởng <strong>5.000 Xu</strong> khi lời mời được duyệt.</p>
     </div>
 
     <div class="vkl-referral-card vkl-referral-code-card">
@@ -4086,7 +4086,7 @@ if (accountIdEl) {
 }
     const coins = Number(walletSnap.data().coins || 0);
     if (balanceEl) {
-  balanceEl.textContent = coins.toLocaleString("vi-VN") + " VNĐ";
+  balanceEl.textContent = coins.toLocaleString("vi-VN") + " Xu";
 }
 const homeName = document.getElementById("home-info-name");
 const homeId = document.getElementById("home-info-id");
@@ -4095,7 +4095,7 @@ const homeBalance = document.getElementById("home-info-balance");
 if (homeName) homeName.textContent = walletSnap.data().displayName || username;
 if (homeId) homeId.textContent = walletSnap.data().userId || "Chưa có ID";
 if (homeBalance) {
-  homeBalance.textContent = coins.toLocaleString("vi-VN") + " VNĐ";
+  homeBalance.textContent = coins.toLocaleString("vi-VN") + " Xu";
 }
     } catch (error) {
     console.error("Lỗi tải ví:", error);
@@ -4565,7 +4565,7 @@ window.saveOrderToFirebase = async function(order) {
       throw new Error(
         "Số dư không đủ! Bạn cần " +
         amount.toLocaleString("vi-VN") +
-        " VNĐ để thanh toán đơn hàng."
+        " Xu để thanh toán đơn hàng."
       );
     }
 
@@ -4836,7 +4836,7 @@ window.findWalletById = async function() {
   <b>🎉 TÌM THẤY TÀI KHOẢN</b>
   <p>Username: ${escapeOrderText(wallet.username)}</p>
   <p>ID: ${id}</p>
-  <p>Số dư: ${Number(wallet.coins || 0).toLocaleString("vi-VN")} VNĐ</p>
+  <p>Số dư: ${Number(wallet.coins || 0).toLocaleString("vi-VN")} Xu</p>
 
   <hr style="border-color:#52617f">
 
@@ -5127,7 +5127,7 @@ if (accounts.length) {
       <p style="margin:6px 0">ID: ${escapeOrderText(account.userId || "Chưa có ID")}</p>
       <p style="margin:6px 0">SĐT liên kết: ${escapeOrderText(account.contactPhone || "Chưa liên kết")}</p>
       <p style="margin:6px 0">Email liên kết: ${escapeOrderText(account.contactEmail || "Chưa liên kết")}</p>
-      <p style="margin:6px 0">Số dư: ${Number(account.coins || 0).toLocaleString("vi-VN")} VNĐ</p>
+      <p style="margin:6px 0">Số dư: ${Number(account.coins || 0).toLocaleString("vi-VN")} Xu</p>
       <button
         onclick="window.editAccountId('${account.uid}','${String(account.userId || "").replace(/[^0-9]/g, "")}')"
         style="display:block;width:100%;padding:10px;border:0;border-radius:8px;background:linear-gradient(100deg,#536fe8,#7955d9);color:#ffffff;-webkit-text-fill-color:#ffffff;font-weight:bold">
@@ -5810,7 +5810,7 @@ if (accountIdEl) {
 }
     const coins = Number(walletSnap.data().coins || 0);
     if (balanceEl) {
-  balanceEl.textContent = coins.toLocaleString("vi-VN") + " VNĐ";
+  balanceEl.textContent = coins.toLocaleString("vi-VN") + " Xu";
 }
 
 const homeName = document.getElementById("home-info-name");
@@ -5825,7 +5825,7 @@ if (accountName) accountName.textContent = savedDisplayName;
 if (accountNameInput) accountNameInput.value = savedDisplayName;
 if (homeId) homeId.textContent = walletSnap.data().userId || "Chưa có ID";
 if (homeBalance) {
-  homeBalance.textContent = coins.toLocaleString("vi-VN") + " VNĐ";
+  homeBalance.textContent = coins.toLocaleString("vi-VN") + " Xu";
 }
 const rankEl = document.getElementById("home-info-rank");
 if (rankEl) {
@@ -5915,11 +5915,11 @@ rankImage.style.setProperty("--rank-glow", glowColors[index]);
                 <div style="display:flex;justify-content:space-between;gap:8px">
                   <span>${note}</span>
                   <strong style="color:${color};white-space:nowrap">
-                    ${sign}${amount.toLocaleString("vi-VN")} VNĐ
+                    ${sign}${amount.toLocaleString("vi-VN")} Xu
                   </strong>
                 </div>
                 <small style="color:#888">
-                  Số dư sau giao dịch: ${Number(item.balanceAfter || 0).toLocaleString("vi-VN")} VNĐ
+                  Số dư sau giao dịch: ${Number(item.balanceAfter || 0).toLocaleString("vi-VN")} Xu
                 </small>
               </div>
             `;
@@ -5983,11 +5983,11 @@ window.loadTransferHistory = async function() {
         <div style="display:flex;justify-content:space-between;gap:8px">
           <span>${item.note || "Nạp Tiền"}</span>
           <strong style="color:#16a34a;white-space:nowrap">
-            +${Number(item.amount || 0).toLocaleString("vi-VN")} VNĐ
+            +${Number(item.amount || 0).toLocaleString("vi-VN")} Xu
           </strong>
         </div>
                 <small style="color:#888;display:block">
-          Số dư sau nạp: ${Number(item.balanceAfter || 0).toLocaleString("vi-VN")} VNĐ
+          Số dư sau nạp: ${Number(item.balanceAfter || 0).toLocaleString("vi-VN")} Xu
         </small>
         <small style="color:#888;display:block;margin-top:5px">
           <i class="fa fa-clock"></i>
@@ -7651,7 +7651,7 @@ reject.onclick = () => window.reviewReferralRequest(doc.id, "reject");
         });
       });
 
-      alert(action === "approve" ? "Đã duyệt +5.000 VNĐ!" : "Đã từ chối yêu cầu.");
+      alert(action === "approve" ? "Đã duyệt +5.000 Xu!" : "Đã từ chối yêu cầu.");
       window.loadReferralAdminList();
     } catch (e) {
       console.error(e);
@@ -8322,7 +8322,7 @@ window.vklSupportSend = async function() {
     const note = (noteInput?.value || "").trim();
 
     if (!Number.isSafeInteger(amount) || amount < 1000) {
-      status.textContent = "Vui lòng nhập số tiền hợp lệ (từ 1.000 VNĐ).";
+      status.textContent = "Vui lòng nhập số tiền hợp lệ (từ 1.000 Xu).";
       return;
     }
     if (!note) {
@@ -8424,7 +8424,7 @@ window.vklSupportSend = async function() {
           let accountId=request.userId||"";
           if(request.uid){try{const walletSnap=await db.collection("wallets").doc(request.uid).get();if(walletSnap.exists&&walletSnap.data().userId)accountId=String(walletSnap.data().userId);}catch(idError){console.error("Lỗi lấy ID tài khoản:",idError);}}
           const heading=document.createElement("b");
-          heading.textContent=(request.username||"Khách")+" • "+Number(request.amount||0).toLocaleString("vi-VN")+" VNĐ";
+          heading.textContent=(request.username||"Khách")+" • "+Number(request.amount||0).toLocaleString("vi-VN")+" Xu";
           const details=document.createElement("p");
           details.style.cssText="font-size:12px;line-height:1.6;overflow-wrap:anywhere";
           details.textContent="ID tài khoản: "+(accountId||"Chưa tìm thấy ID")+" | Nội dung: "+(request.transferNote||"Không ghi")+" | Thời gian: "+date+" | Trạng thái: "+(request.status||"pending");
