@@ -1266,6 +1266,32 @@ body.dark .vkl-delivered-credentials {
 }
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&display=swap" rel="stylesheet">
+
+<style>
+/* THANH ĐIỀU HƯỚNG ĐƯỢC ĐƯA LÊN VỊ TRÍ BANNER VÒNG QUAY */
+body { padding-bottom:24px !important; }
+.bottom { position:static !important; background:transparent !important; backdrop-filter:none !important; border:0 !important; padding:0 !important; }
+.nav.home-tabs {
+  width:100%; max-width:760px; margin:16px auto;
+  display:grid; grid-template-columns:repeat(4,minmax(0,1fr));
+  align-items:center; gap:2px; padding:8px 5px;
+  border:1px solid #b86cff; border-radius:18px;
+  background:linear-gradient(110deg,#241044,#6b2bbd,#c13cae);
+  box-shadow:0 7px 22px #7c3aed44;
+}
+.nav.home-tabs button {
+  min-width:0; border:0!important; outline:none!important;
+  background:transparent!important; color:#fff!important;
+  border-radius:12px!important; box-shadow:none!important;
+  font-size:11px; font-weight:800; line-height:1.25;
+  padding:8px 2px; white-space:normal;
+  -webkit-tap-highlight-color:transparent;
+}
+.nav.home-tabs button span { display:block; font-size:22px; margin-bottom:4px; }
+.nav.home-tabs button.active { background:#ffffff25!important; color:#fff!important; }
+.nav.home-tabs button:focus,.nav.home-tabs button:focus-visible,.nav.home-tabs button:active { outline:none!important; box-shadow:none!important; }
+@media(max-width:370px){ .nav.home-tabs button { font-size:10px; } .nav.home-tabs button span { font-size:20px; } }
+</style>
 </head>
 
 <body>
@@ -1369,18 +1395,24 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
 
 </section>
 
-<a href="wheel.html" style="
- display:flex;align-items:center;justify-content:space-between;gap:12px;
- margin:16px 0;padding:17px 18px;border-radius:18px;text-decoration:none;
- color:#fff;background:linear-gradient(110deg,#241044,#6b2bbd,#c13cae);
- border:1px solid #b86cff;box-shadow:0 7px 22px #7c3aed44;
-">
- <span style="display:flex;align-items:center;gap:12px">
-  <span style="font-size:31px">🎡</span>
-  <span><b style="display:block;font-size:16px">VÒNG QUAY MAY MẮN</b><small style="display:block;margin-top:4px;color:#f0dcff">Quay miễn phí • Nhận Xu mỗi ngày</small></span>
- </span>
- <b style="font-size:25px">›</b>
-</a>
+<nav class="nav home-tabs">
+
+  <button class="active" onclick="goHome()">
+   <span>🏡</span>Trang chủ
+  </button>
+
+  <button onclick="openModal('transfer')">
+   <span>💸</span>Chuyển Khoản
+  </button>
+
+  <button onclick="openModal('history')">
+   <span>📜</span>Lịch sử
+  </button>
+
+  <button onclick="openModal('account')">
+  <span>👤</span>
+  Tài khoản
+</button>
 
 
 
@@ -1586,26 +1618,7 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
 
 
 <div class="bottom">
- <nav class="nav">
-
-  <button class="active" onclick="goHome()">
-   <span>🏡</span>Trang chủ
-  </button>
-
-  <button onclick="openModal('transfer')">
-   <span>💸</span>Chuyển Khoản
-  </button>
-
-  <button onclick="openModal('history')">
-   <span>📜</span>Lịch sử
-  </button>
-
-  <button onclick="openModal('account')">
-  <span>👤</span>
-  Tài khoản
-</button>
-
-<div class="contact-menu" id="contactMenu">
+ <div class="contact-menu" id="contactMenu">
   <a href="https://zalo.me/0902287225" target="_blank" style="background:#0068ff">
    <img src="https://cdn.simpleicons.org/zalo/FFFFFF" alt="Zalo">
   </a>
@@ -1622,8 +1635,6 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
    <img src="https://cdn.simpleicons.org/tiktok/FFFFFF" alt="TikTok">
   </a>
 </div>
-
-</nav>
 <button class="create" onclick="toggleContactMenu()">
  <span>☎️</span>
 </button>
