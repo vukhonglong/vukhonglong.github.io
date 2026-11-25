@@ -1347,10 +1347,10 @@ body.dark .wheel-bottom-link small { color:#b3bdd4; }
 /* Banner trang chủ và chữ 7 màu cho các tab khác */
 .wheel-bottom-bar{justify-content:flex-start;overflow:hidden}
 .vkl-rainbow-marquee{display:none;flex:1 1 100%;min-width:0;width:100%;margin:0;overflow:hidden;white-space:nowrap;font-weight:1000;font-size:14px!important;letter-spacing:1px;box-sizing:border-box}
-.vkl-rainbow-marquee{display:none;flex:1 1 100%;min-width:0;width:100%;margin:0;overflow:hidden;white-space:nowrap;font-weight:1000;font-size:14px!important;letter-spacing:1px;box-sizing:border-box}.vkl-rainbow-words{display:flex!important;width:100%!important;max-width:100%;align-items:center;justify-content:space-between;white-space:nowrap;transform:none!important}.vkl-rainbow-words span{display:block;flex:0 0 auto;background:linear-gradient(90deg,#ff3434,#ff9d24,#ffe438,#35d66b,#25c9ff,#5865ff,#d34dff,#ff3434);background-size:300% 100%;background-clip:text;-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent;animation:vklRainbowFlow 5s linear infinite}
+.vkl-rainbow-marquee>span{display:block;width:100%;margin:0;padding:0;text-align:justify;text-align-last:justify;white-space:nowrap;background:linear-gradient(90deg,#ff3434,#ff9d24,#ffe438,#35d66b,#25c9ff,#5865ff,#d34dff,#ff3434);background-size:300% 100%;background-clip:text;-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent;animation:vklRainbowFlow 5s linear infinite}
 @keyframes vklRainbowFlow{to{background-position:300% 0}}
 .wheel-bottom-bar.other-main-tab .home-wheel-only{display:none}
-.wheel-bottom-bar.other-main-tab .vkl-rainbow-marquee{display:flex;justify-content:center;align-items:center}
+.wheel-bottom-bar.other-main-tab .vkl-rainbow-marquee{display:block!important;flex:1 1 100%;width:100%;min-width:0}
 </style></head>
 
 <body>
@@ -1680,7 +1680,7 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
     <span class="wheel-icon">🎡</span>
     <span class="wheel-copy"><b>VÒNG QUAY MAY MẮN</b><small>Quay miễn phí • Nhận Xu</small></span>
   </span>
-  <span class="vkl-rainbow-marquee" aria-label="VuKhongLong Never Die"><span class="vkl-rainbow-words"><span>VuKhongLong</span><span>Never</span><span>Die</span></span></span>
+  <span class="vkl-rainbow-marquee" aria-label="VuKhongLong Never Die"><span>VuKhongLong Never Die</span></span>
 </a>
 
 <div class="bottom">
