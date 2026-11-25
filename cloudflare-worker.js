@@ -149,7 +149,7 @@ function firestoreValue(value) {
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
-    if (request.method === "GET") return Response.json({ service: "vkl-lucky-wheel", version: "2026-11-24-daily-reset", mode: "one-spin-per-day-vietnam-time" }, { status: 200, headers: cors });
+    if (request.method === "GET") return Response.json({ service: "vkl-lucky-wheel", version: "2026-11-25-admin-fix", mode: "one-spin-per-day-vietnam-time" }, { status: 200, headers: cors });
     if (request.method !== "POST") return Response.json({ error: "Method not allowed" }, { status: 405, headers: cors });
 
     try {
@@ -161,7 +161,7 @@ export default {
       const body = await request.json();
       const action = body.action || "spin";
       const user = await verifyFirebaseUser(match[1]);
-      const isAdmin = user.email === ADMIN_EMAIL && user.emailVerified;
+      const isAdmin = user.email === ADMIN_EMAIL;
       const date = vietnamDateKey();
       const token = await googleAccessToken(env);
       const documentRoot = "projects/" + env.FIREBASE_PROJECT_ID + "/databases/(default)/documents";
