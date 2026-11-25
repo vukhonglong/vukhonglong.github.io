@@ -1268,18 +1268,20 @@ body.dark .vkl-delivered-credentials {
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&display=swap" rel="stylesheet">
 
 <style>
-/* THANH TAB TRANG CHỦ - ĐỒNG BỘ NỀN SÁNG/TỐI */
-body { padding-bottom:92px !important; }
+/* 4 TAB CỐ ĐỊNH Ở DƯỚI; BANNER SỰ KIỆN NẰM Ở VỊ TRÍ TAB CŨ */
+body { padding-bottom:calc(82px + env(safe-area-inset-bottom)) !important; }
 .bottom {
   position:static !important; background:transparent !important;
   backdrop-filter:none !important; border:0 !important; padding:0 !important;
 }
 .nav.home-tabs {
-  width:100%; max-width:760px; margin:16px auto;
+  position:fixed; left:0; right:0; bottom:0; z-index:80;
+  width:100%; max-width:760px; margin:0 auto;
   display:grid; grid-template-columns:repeat(4,minmax(0,1fr));
-  align-items:center; gap:2px; padding:8px 5px;
-  border:1px solid #aeb5c1; border-radius:18px;
-  background:#b8bec9; box-shadow:0 5px 16px #17203312;
+  align-items:center; gap:2px; padding:8px 5px calc(8px + env(safe-area-inset-bottom));
+  border:0; border-top:1px solid #aeb5c1; border-radius:0;
+  background:#b8bec9ee; backdrop-filter:blur(15px);
+  box-shadow:0 -5px 16px #17203312;
 }
 .nav.home-tabs button {
   min-width:0; border:0!important; outline:none!important;
@@ -1308,13 +1310,13 @@ body.dark .nav.home-tabs button:focus-visible,
 body.dark .nav.home-tabs button:active { color:#f1f3fa!important; background:transparent!important; }
 @media(max-width:370px){ .nav.home-tabs button { font-size:10px; } .nav.home-tabs button span { font-size:20px; } }
 
-/* THANH VÒNG QUAY Ở ĐÁY - GIỮ NGUYÊN HUY HIỆU NETLIFY */
+/* BANNER SỰ KIỆN Ở PHÍA TRÊN - KHÔNG CÓ NỀN BAO BÊN NGOÀI */
 .wheel-bottom-bar {
-  position:fixed; left:0; right:0; bottom:0; z-index:40;
-  display:flex; align-items:center; justify-content:flex-start;
-  padding:8px 12px calc(8px + env(safe-area-inset-bottom));
-  min-height:66px; background:#e2e4e9ed;
-  border-top:1px solid #cbd0da; backdrop-filter:blur(15px);
+  position:relative; display:flex; width:100%; max-width:760px;
+  align-items:center; justify-content:flex-start;
+  margin:16px auto; padding:0;
+  min-height:0; background:transparent;
+  border:0; box-shadow:none; backdrop-filter:none;
 }
 .wheel-bottom-link {
   position:relative; isolation:isolate; overflow:hidden;
@@ -1359,42 +1361,14 @@ body.dark .nav.home-tabs button:active { color:#f1f3fa!important; background:tra
   0%,100% { transform:translateY(0) rotate(-5deg); }
   50% { transform:translateY(-3px) rotate(5deg); }
 }
-.wheel-brand-only { display:none; }
-.wheel-bottom-bar.other-main-tab { pointer-events:none; }
-.wheel-bottom-bar.other-main-tab .home-wheel-only { display:none; }
-.wheel-bottom-bar.other-main-tab .wheel-brand-only {
-  display:flex; align-items:center; justify-content:flex-start;
-  flex:1 1 100%; width:100%; min-width:0; min-height:48px;
-  margin:0; padding:0; overflow:hidden;
-  background:transparent; border:0; border-radius:0; box-shadow:none;
-}
-.wheel-brand-only span {
-  display:inline-block; flex:0 0 auto;
-  padding-left:100%;
-  color:transparent; font-size:20px; font-weight:900;
-  line-height:1.2; white-space:nowrap;
-  background-image:linear-gradient(90deg,#ffffff 0%,#76e7ff 24%,#c99bff 48%,#ffffff 72%,#76e7ff 100%);
-  background-size:250% auto; background-clip:text; -webkit-background-clip:text;
-  animation:wheelBrandMarquee 9s linear infinite, wheelBrandColor 4s linear infinite;
-}
-@keyframes wheelBrandMarquee {
-  from { transform:translateX(0); }
-  to { transform:translateX(-100%); }
-}
-@keyframes wheelBrandColor {
-  from { background-position:0% center; }
-  to { background-position:250% center; }
-}
-body.dark .wheel-bottom-bar {
-  background:#171d2eee; border-color:#303951;
-}
+.wheel-bottom-bar.other-main-tab { display:none; }
+body.dark .wheel-bottom-bar { background:transparent; border:0; box-shadow:none; }
 body.dark .wheel-bottom-link {
   color:#fff; border-color:#a9eaff;
 }
 body.dark .wheel-bottom-link small { color:#f0eaff; }
 @media(max-width:370px) {
-  .wheel-bottom-link { width:100%; padding:7px 10px; gap:8px; }\n  .wheel-brand-only span { font-size:18px; }
-  .wheel-bottom-link .wheel-icon { font-size:21px; }
+  .wheel-bottom-link { width:100%; padding:7px 10px; gap:8px; }\n  .wheel-bottom-link .wheel-icon { font-size:21px; }
   .wheel-bottom-link b { font-size:11px; }
   .wheel-bottom-link small { font-size:8px; }
 }
@@ -1501,6 +1475,13 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
   </div>
 
 </section>
+
+<a class="wheel-bottom-bar" id="homeWheelBanner" href="wheel.html" aria-label="Mở vòng quay may mắn">
+  <span class="wheel-bottom-link">
+    <span class="wheel-icon">🎡</span>
+    <span class="wheel-copy"><b>VÒNG QUAY MAY MẮN</b><small>Quay miễn phí • Nhận Xu</small></span>
+  </span>
+</a>
 
 <nav class="nav home-tabs">
 
@@ -1723,13 +1704,7 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
 
 </main>
 
-<a class="wheel-bottom-bar" id="homeWheelBanner" href="wheel.html" aria-label="Mở vòng quay may mắn">
-  <span class="wheel-bottom-link home-wheel-only">
-    <span class="wheel-icon">🎡</span>
-    <span class="wheel-copy"><b>VÒNG QUAY MAY MẮN</b><small>Quay miễn phí • Nhận Xu</small></span>
-  </span>
-  <span class="wheel-brand-only"><span>VuKhongLong Never Die</span></span>
-</a>
+
 
 <div class="bottom">
  <div class="contact-menu" id="contactMenu">
