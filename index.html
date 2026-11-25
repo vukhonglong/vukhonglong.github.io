@@ -1344,13 +1344,13 @@ body.dark .wheel-bottom-link small { color:#b3bdd4; }
 }
 </style>
 <style>
-/* Banner trang chủ và chữ 7 màu cho các tab khác */
+/* Dùng đúng kiểu banner trang chủ cho dòng chữ ở các tab khác */
 .wheel-bottom-bar{justify-content:flex-start;overflow:hidden}
-.vkl-rainbow-marquee{display:none;flex:1 1 100%;min-width:0;width:100%;margin:0;overflow:hidden;box-sizing:border-box}
-.vkl-rainbow-marquee svg{display:block;width:100%;height:24px;overflow:visible}
+.vkl-never-die{display:none;width:100%;max-width:none;min-height:48px;box-sizing:border-box;justify-content:center;text-align:center}
+.vkl-never-die .wheel-copy{width:100%;text-align:center}
+.vkl-never-die .wheel-copy b{font-size:12px;white-space:nowrap}
 .wheel-bottom-bar.other-main-tab .home-wheel-only{display:none}
-.wheel-bottom-bar.other-main-tab .vkl-rainbow-marquee{display:block!important;flex:1 1 100%;width:100%;min-width:0}
-</style></head>
+.wheel-bottom-bar.other-main-tab .vkl-never-die{display:flex!important;flex:1 1 100%;width:100%;max-width:none;min-width:0}</style></head>
 
 <body>
 
@@ -1679,22 +1679,8 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
     <span class="wheel-icon">🎡</span>
     <span class="wheel-copy"><b>VÒNG QUAY MAY MẮN</b><small>Quay miễn phí • Nhận Xu</small></span>
   </span>
-  <span class="vkl-rainbow-marquee" aria-label="VuKhongLong Never Die">
-    <svg viewBox="0 0 1000 24" role="img" aria-hidden="true" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="vklRainbowGradient" x1="0" y1="0" x2="1000" y2="0" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stop-color="#ff3434"/>
-          <stop offset="16%" stop-color="#ff9d24"/>
-          <stop offset="32%" stop-color="#ffe438"/>
-          <stop offset="48%" stop-color="#35d66b"/>
-          <stop offset="64%" stop-color="#25c9ff"/>
-          <stop offset="80%" stop-color="#5865ff"/>
-          <stop offset="100%" stop-color="#d34dff"/>
-          <animateTransform attributeName="gradientTransform" type="translate" values="-1000 0;1000 0" dur="5s" repeatCount="indefinite"/>
-        </linearGradient>
-      </defs>
-      <text x="0" y="18" textLength="1000" lengthAdjust="spacing" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="900" fill="url(#vklRainbowGradient)">VuKhongLong Never Die</text>
-    </svg>
+  <span class="wheel-bottom-link vkl-never-die" aria-label="VuKhongLong Never Die">
+    <span class="wheel-copy"><b>VuKhongLong Never Die</b></span>
   </span>
 </a>
 
