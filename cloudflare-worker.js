@@ -153,10 +153,7 @@ export default {
     if (request.method !== "POST") return Response.json({ error: "Method not allowed" }, { status: 405, headers: cors });
 
     try {
-      const origin = request.headers.get("Origin") || "";
-      if (!["https://vukhonglong.github.io", "https://vukhonglong.vercel.app"].includes(origin)) {
-        return Response.json({ error: "Origin không được phép." }, { status: 403, headers: cors });
-      }
+      // CORS đã bật; quyền quay được kiểm soát bằng Firebase ID token và xác thực admin phía máy chủ.
       const authorization = request.headers.get("Authorization") || "";
       const match = authorization.match(/^Bearer\s+(.+)$/i);
       if (!match) return Response.json({ error: "Vui lòng đăng nhập lại." }, { status: 401, headers: cors });
