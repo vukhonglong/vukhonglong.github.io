@@ -1283,6 +1283,12 @@ body { padding-bottom:calc(82px + env(safe-area-inset-bottom)) !important; }
   background:#b8bec9ee; backdrop-filter:blur(15px);
   box-shadow:0 -5px 16px #17203312;
 }
+.nav.home-tabs { transition:transform .25s ease, visibility .25s ease; }
+body.tabs-hidden .nav.home-tabs {
+  transform:translateY(110%);
+  visibility:hidden;
+  pointer-events:none;
+}
 .nav.home-tabs button {
   min-width:0; border:0!important; outline:none!important;
   background:transparent!important; color:#11182d!important;
@@ -2068,6 +2074,7 @@ function toggleContactMenu(){
  menu.classList.toggle("show");
 }
 function openModal(type){
+ document.body.classList.add("tabs-hidden");
  const body = document.getElementById("modalBody");
 
 if(type === "mailbox"){
@@ -3119,6 +3126,7 @@ function closeQR(){
 }
 function closeModal(){
  const modal = document.getElementById("modal");
+ document.body.classList.remove("tabs-hidden");
  modal.classList.remove("show");
  modal.classList.remove("page-mode");
  document.getElementById("homeWheelBanner")?.classList.remove("other-main-tab");
@@ -3128,6 +3136,7 @@ function openMainTab(type){
 }
 
 function goHome(){
+ document.body.classList.remove("tabs-hidden");
  const banner=document.getElementById("homeWheelBanner");
  if(banner) banner.classList.remove("other-main-tab");
  window.scrollTo({
