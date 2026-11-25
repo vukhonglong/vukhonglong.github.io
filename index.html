@@ -1377,8 +1377,19 @@ body.dark .wheel-bottom-link small { color:#b3bdd4; }
   white-space:nowrap;
 }
 @keyframes vklBannerShine{to{background-position:250% center}}
-.wheel-bottom-bar.other-main-tab .home-wheel-only{display:none}
-.wheel-bottom-bar.other-main-tab .vkl-never-die{display:flex!important}
+.wheel-bottom-bar.other-main-tab .home-wheel-only{display:none!important}
+.wheel-bottom-bar.other-main-tab .vkl-never-die{
+  display:flex!important;
+  flex:1 1 100%!important;
+  width:100%!important;
+  max-width:none!important;
+  margin-left:-20px;
+}
+.wheel-bottom-bar.other-main-tab .vkl-never-die-words{
+  display:flex!important;
+  width:100%!important;
+  justify-content:space-between!important;
+}
 @media(max-width:370px){.vkl-never-die-words b{font-size:11px}}</style></head>
 
 <body>
@@ -3087,6 +3098,12 @@ if(
 }
 
 modal.classList.add("show");
+
+/* Đồng bộ banner theo trạng thái trang thực tế sau khi openModal xử lý xong */
+const bottomBanner = document.getElementById("homeWheelBanner");
+if(bottomBanner){
+  bottomBanner.classList.toggle("other-main-tab", modal.classList.contains("page-mode"));
+}
 }
 function copyPayment(value){
  if(navigator.clipboard && window.isSecureContext){
