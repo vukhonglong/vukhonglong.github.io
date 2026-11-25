@@ -3674,7 +3674,8 @@ list.textContent = "Đang tải thư...";
 
   }catch(error){
     console.error("Lỗi tải hộp thư:", error);
-    list.textContent = "Không tải được hộp thư. Vui lòng thử lại.";
+    const detail = error && error.message ? error.message : String(error || "Lỗi không xác định");
+    list.textContent = "Không tải được hộp thư: " + detail;
   }
 };
 
