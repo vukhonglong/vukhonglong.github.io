@@ -1346,9 +1346,8 @@ body.dark .wheel-bottom-link small { color:#b3bdd4; }
 <style>
 /* Banner trang chủ và chữ 7 màu cho các tab khác */
 .wheel-bottom-bar{justify-content:flex-start;overflow:hidden}
-.vkl-rainbow-marquee{display:none;flex:1 1 100%;min-width:0;width:100%;margin:0;overflow:hidden;white-space:nowrap;font-weight:1000;font-size:14px!important;letter-spacing:1px;box-sizing:border-box}
-.vkl-rainbow-marquee>span{display:block;width:100%;margin:0;padding:0;text-align:justify;text-align-last:justify;white-space:nowrap;background:linear-gradient(90deg,#ff3434,#ff9d24,#ffe438,#35d66b,#25c9ff,#5865ff,#d34dff,#ff3434);background-size:300% 100%;background-clip:text;-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent;animation:vklRainbowFlow 5s linear infinite}
-@keyframes vklRainbowFlow{to{background-position:300% 0}}
+.vkl-rainbow-marquee{display:none;flex:1 1 100%;min-width:0;width:100%;margin:0;overflow:hidden;box-sizing:border-box}
+.vkl-rainbow-marquee svg{display:block;width:100%;height:24px;overflow:visible}
 .wheel-bottom-bar.other-main-tab .home-wheel-only{display:none}
 .wheel-bottom-bar.other-main-tab .vkl-rainbow-marquee{display:block!important;flex:1 1 100%;width:100%;min-width:0}
 </style></head>
@@ -1680,7 +1679,23 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
     <span class="wheel-icon">🎡</span>
     <span class="wheel-copy"><b>VÒNG QUAY MAY MẮN</b><small>Quay miễn phí • Nhận Xu</small></span>
   </span>
-  <span class="vkl-rainbow-marquee" aria-label="VuKhongLong Never Die"><span>VuKhongLong Never Die</span></span>
+  <span class="vkl-rainbow-marquee" aria-label="VuKhongLong Never Die">
+    <svg viewBox="0 0 1000 24" role="img" aria-hidden="true" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="vklRainbowGradient" x1="0" y1="0" x2="1000" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#ff3434"/>
+          <stop offset="16%" stop-color="#ff9d24"/>
+          <stop offset="32%" stop-color="#ffe438"/>
+          <stop offset="48%" stop-color="#35d66b"/>
+          <stop offset="64%" stop-color="#25c9ff"/>
+          <stop offset="80%" stop-color="#5865ff"/>
+          <stop offset="100%" stop-color="#d34dff"/>
+          <animateTransform attributeName="gradientTransform" type="translate" values="-1000 0;1000 0" dur="5s" repeatCount="indefinite"/>
+        </linearGradient>
+      </defs>
+      <text x="0" y="18" textLength="1000" lengthAdjust="spacing" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="900" fill="url(#vklRainbowGradient)">VuKhongLong Never Die</text>
+    </svg>
+  </span>
 </a>
 
 <div class="bottom">
