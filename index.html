@@ -1344,31 +1344,42 @@ body.dark .wheel-bottom-link small { color:#b3bdd4; }
 }
 </style>
 <style>
-/* Chỉ thay nội dung trong thanh banner gốc ở các tab phụ */
+/* Chữ tab phụ trải đều hết chiều ngang thanh banner gốc */
 .vkl-never-die{
   display:none;
   flex:1 1 auto;
-  min-width:0;
   width:100%;
+  min-width:0;
   box-sizing:border-box;
-  text-align:center;
-  white-space:nowrap;
+  align-items:center;
   overflow:hidden;
-  font-size:12px;
-  line-height:1.3;
-  font-weight:1000;
-  letter-spacing:.25px;
-  color:transparent;
+}
+.vkl-never-die-words{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  width:100%;
+  min-width:0;
+  gap:4px;
   background:linear-gradient(90deg,#00c8ff,#675cff,#d34dff,#00c8ff);
   background-size:250% 100%;
   background-clip:text;
   -webkit-background-clip:text;
+  color:transparent;
   animation:vklBannerShine 3s linear infinite;
+}
+.vkl-never-die-words b{
+  display:block;
+  font-size:12px;
+  line-height:1.3;
+  font-weight:1000;
+  letter-spacing:0;
+  white-space:nowrap;
 }
 @keyframes vklBannerShine{to{background-position:250% center}}
 .wheel-bottom-bar.other-main-tab .home-wheel-only{display:none}
-.wheel-bottom-bar.other-main-tab .vkl-never-die{display:block!important}
-@media(max-width:370px){.vkl-never-die{font-size:11px;letter-spacing:0}}</style></head>
+.wheel-bottom-bar.other-main-tab .vkl-never-die{display:flex!important}
+@media(max-width:370px){.vkl-never-die-words b{font-size:11px}}</style></head>
 
 <body>
 
@@ -1697,7 +1708,7 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
     <span class="wheel-icon">🎡</span>
     <span class="wheel-copy"><b>VÒNG QUAY MAY MẮN</b><small>Quay miễn phí • Nhận Xu</small></span>
   </span>
-  <span class="vkl-never-die" aria-label="VuKhongLong Never Die">VuKhongLong Never Die</span>
+  <span class="vkl-never-die" aria-label="VuKhongLong Never Die"><span class="vkl-never-die-words"><b>VuKhongLong</b><b>Never</b><b>Die</b></span></span>
 </a>
 
 <div class="bottom">
