@@ -1346,11 +1346,11 @@ body.dark .wheel-bottom-link small { color:#b3bdd4; }
 <style>
 /* Banner trang chủ và chữ 7 màu cho các tab khác */
 .wheel-bottom-bar{justify-content:flex-start;overflow:hidden}
-.vkl-rainbow-marquee{display:none;flex:1 1 100%;min-width:0;width:calc(100% + 20px);margin-left:-20px;overflow:hidden;white-space:nowrap;text-align:center;font-weight:1000;font-size:16px!important;letter-spacing:1px;box-sizing:border-box;transform:none!important}
-.vkl-rainbow-marquee span{display:block;width:max-content;max-width:none;margin-left:auto;margin-right:auto;text-align:center;text-indent:0;white-space:nowrap;position:relative;left:-20px;transform:none;background:linear-gradient(90deg,#ff3434,#ff9d24,#ffe438,#35d66b,#25c9ff,#5865ff,#d34dff,#ff3434);background-size:300% 100%;background-clip:text;-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent;animation:vklRainbowFlow 5s linear infinite}
+.vkl-rainbow-marquee{display:none;flex:1 1 100%;min-width:0;width:100%;margin:0;overflow:hidden;white-space:nowrap;font-weight:1000;font-size:14px!important;letter-spacing:1px;box-sizing:border-box}
+.vkl-rainbow-marquee span{display:block;width:max-content;max-width:none;margin:0;text-align:center;text-indent:0;white-space:nowrap;transform:translateX(-20px)!important;background:linear-gradient(90deg,#ff3434,#ff9d24,#ffe438,#35d66b,#25c9ff,#5865ff,#d34dff,#ff3434);background-size:300% 100%;background-clip:text;-webkit-background-clip:text;color:transparent;-webkit-text-fill-color:transparent;animation:vklRainbowFlow 5s linear infinite}
 @keyframes vklRainbowFlow{to{background-position:300% 0}}
 .wheel-bottom-bar.other-main-tab .home-wheel-only{display:none}
-.wheel-bottom-bar.other-main-tab .vkl-rainbow-marquee{display:block}
+.wheel-bottom-bar.other-main-tab .vkl-rainbow-marquee{display:flex;justify-content:center;align-items:center}
 </style></head>
 
 <body>
