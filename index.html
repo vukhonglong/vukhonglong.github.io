@@ -6159,26 +6159,28 @@ window.customerLogin = async function() {
   try {
     const username = document.getElementById("vkl-auth-username").value.trim();
     const password = document.getElementById("vkl-auth-password").value;
+    const isAdminEmail = username.toLowerCase() === "haphamngu123@gmail.com";
 
-    if (!/^[A-Za-z0-9]{4,20}$/.test(username))
-      throw new Error("Tên tài khoản phải có 4–20 ký tự chữ và số.");
+    if (!isAdminEmail && !/^[A-Za-z0-9]{4,20}$/.test(username))
+      throw new Error("Nhập email quản trị hoặc tên tài khoản 4–20 ký tự chữ và số.");
 
-    await window.auth.signInWithEmailAndPassword(
-      username.toLowerCase() + "@login.vukhongglong.com",
-      password
-    );
+    const email = isAdminEmail
+      ? "haphamngu123@gmail.com"
+      : username.toLowerCase() + "@login.vukhongglong.com";
 
+    await window.auth.signInWithEmailAndPassword(email, password);
     alert("Đăng nhập thành công!");
     closeModal();
   } catch(error) {
+    console.error("Lỗi đăng nhập Firebase:", error.code, error.message);
     const errors = {
-      "auth/invalid-credential": "Tên tài khoản hoặc mật khẩu không chính xác!",
-      "auth/user-not-found": "Không tìm thấy tài khoản này!",
-      "auth/wrong-password": "Mật khẩu không chính xác!",
-      "auth/too-many-requests": "Bạn đã thử quá nhiều lần. Vui lòng thử lại sau!"
+      "auth/invalid-credential": "Email hoặc mật khẩu không chính xác. Hãy kiểm tra mật khẩu đã liên kết.",
+      "auth/user-not-found": "Firebase không tìm thấy email này. Có thể thao tác liên kết mật khẩu trước đó chưa thành công.",
+      "auth/wrong-password": "Mật khẩu không chính xác.",
+      "auth/too-many-requests": "Bạn đã thử quá nhiều lần. Vui lòng thử lại sau.",
+      "auth/operation-not-allowed": "Firebase chưa bật phương thức Email/Mật khẩu trong Authentication."
     };
-
-    message.textContent = errors[error.code] || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!";
+    message.textContent = errors[error.code] || ("Lỗi đăng nhập (" + (error.code || "không rõ") + "): " + error.message);
   }
 };
 window.showAdminSection = function(section) {
