@@ -1,5 +1,5 @@
 const cors = {
-  "Access-Control-Allow-Origin": "https://vukhonglong.github.io",
+  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
   "Vary": "Origin"
@@ -154,7 +154,7 @@ export default {
 
     try {
       const origin = request.headers.get("Origin") || "";
-      if (origin !== "https://vukhonglong.github.io") {
+      if (!["https://vukhonglong.github.io", "https://vukhonglong.vercel.app"].includes(origin)) {
         return Response.json({ error: "Origin không được phép." }, { status: 403, headers: cors });
       }
       const authorization = request.headers.get("Authorization") || "";
