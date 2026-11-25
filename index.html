@@ -5676,7 +5676,7 @@ window.saveOrderProgressSchedule = async function(code) {
 
 // TỰ TẢI BẢNG KHI QUẢN TRỊ ĐĂNG NHẬP
 window.auth.onAuthStateChanged(user => {
-  if (user && user.email === managerEmail && user.emailVerified) {
+  if (user && user.email && user.email.toLowerCase() === managerEmail.toLowerCase()) {
     currentManager = user;
     window.renderOrderAdmin();
   } else {
