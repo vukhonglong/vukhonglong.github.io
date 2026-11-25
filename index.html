@@ -477,6 +477,15 @@ body.dark .history-item {
   color: #f1f3fa;
 }
 
+/* LỊCH SỬ ĐƠN HÀNG: chữ đen khi dùng nền sáng */
+body:not(.dark) #vkl-customer-order-history,
+body:not(.dark) #vkl-customer-order-history .history-item,
+body:not(.dark) #vkl-customer-order-history .history-item b,
+body:not(.dark) #vkl-customer-order-history .history-item p,
+body:not(.dark) #vkl-customer-order-history .history-item .muted {
+  color:#111111 !important;
+}
+
 body.dark .action {
   background: #252e45;
   border-color: #37415b;
