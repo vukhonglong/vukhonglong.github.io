@@ -1268,29 +1268,80 @@ body.dark .vkl-delivered-credentials {
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&display=swap" rel="stylesheet">
 
 <style>
-/* THANH ĐIỀU HƯỚNG ĐƯỢC ĐƯA LÊN VỊ TRÍ BANNER VÒNG QUAY */
-body { padding-bottom:24px !important; }
-.bottom { position:static !important; background:transparent !important; backdrop-filter:none !important; border:0 !important; padding:0 !important; }
+/* THANH TAB TRANG CHỦ - ĐỒNG BỘ NỀN SÁNG/TỐI */
+body { padding-bottom:92px !important; }
+.bottom {
+  position:static !important; background:transparent !important;
+  backdrop-filter:none !important; border:0 !important; padding:0 !important;
+}
 .nav.home-tabs {
   width:100%; max-width:760px; margin:16px auto;
   display:grid; grid-template-columns:repeat(4,minmax(0,1fr));
   align-items:center; gap:2px; padding:8px 5px;
-  border:1px solid #b86cff; border-radius:18px;
-  background:linear-gradient(110deg,#241044,#6b2bbd,#c13cae);
-  box-shadow:0 7px 22px #7c3aed44;
+  border:1px solid #cbd0da; border-radius:18px;
+  background:#e2e4e9; box-shadow:0 5px 16px #17203312;
 }
 .nav.home-tabs button {
   min-width:0; border:0!important; outline:none!important;
-  background:transparent!important; color:#fff!important;
+  background:transparent!important; color:#11182d!important;
   border-radius:12px!important; box-shadow:none!important;
   font-size:11px; font-weight:800; line-height:1.25;
   padding:8px 2px; white-space:normal;
   -webkit-tap-highlight-color:transparent;
 }
 .nav.home-tabs button span { display:block; font-size:22px; margin-bottom:4px; }
-.nav.home-tabs button.active { background:#ffffff25!important; color:#fff!important; }
-.nav.home-tabs button:focus,.nav.home-tabs button:focus-visible,.nav.home-tabs button:active { outline:none!important; box-shadow:none!important; }
+.nav.home-tabs button.active,
+.nav.home-tabs button:focus,
+.nav.home-tabs button:focus-visible,
+.nav.home-tabs button:active {
+  background:transparent!important; color:#11182d!important;
+  outline:none!important; border:0!important; box-shadow:none!important;
+}
+body.dark .nav.home-tabs {
+  background:#101421; border-color:#303951;
+  box-shadow:0 5px 16px #00000022;
+}
+body.dark .nav.home-tabs button,
+body.dark .nav.home-tabs button.active,
+body.dark .nav.home-tabs button:focus,
+body.dark .nav.home-tabs button:focus-visible,
+body.dark .nav.home-tabs button:active { color:#f1f3fa!important; background:transparent!important; }
 @media(max-width:370px){ .nav.home-tabs button { font-size:10px; } .nav.home-tabs button span { font-size:20px; } }
+
+/* THANH VÒNG QUAY Ở ĐÁY - GIỮ NGUYÊN HUY HIỆU NETLIFY */
+.wheel-bottom-bar {
+  position:fixed; left:0; right:0; bottom:0; z-index:19;
+  display:flex; align-items:center; justify-content:flex-start;
+  padding:8px 12px calc(8px + env(safe-area-inset-bottom));
+  min-height:66px; background:#e2e4e9ed;
+  border-top:1px solid #cbd0da; backdrop-filter:blur(15px);
+}
+.wheel-bottom-link {
+  width:min(48vw,280px); min-width:0; min-height:48px;
+  display:flex; align-items:center; gap:9px;
+  padding:8px 12px; border-radius:14px;
+  color:#11182d; text-decoration:none; font-weight:800;
+  background:#d1d5dd; border:1px solid #b8bec9;
+  box-shadow:0 3px 10px #17203312;
+}
+.wheel-bottom-link .wheel-icon { font-size:25px; flex:0 0 auto; }
+.wheel-bottom-link .wheel-copy { min-width:0; line-height:1.2; }
+.wheel-bottom-link b { display:block; font-size:12px; white-space:nowrap; }
+.wheel-bottom-link small { display:block; margin-top:3px; font-size:9px; color:#626b7a; white-space:nowrap; }
+body.dark .wheel-bottom-bar {
+  background:#171d2eee; border-color:#303951;
+}
+body.dark .wheel-bottom-link {
+  color:#f1f3fa; background:#1b2336; border-color:#303951;
+  box-shadow:0 3px 10px #00000022;
+}
+body.dark .wheel-bottom-link small { color:#b3bdd4; }
+@media(max-width:370px) {
+  .wheel-bottom-link { width:48vw; padding:7px 8px; gap:6px; }
+  .wheel-bottom-link .wheel-icon { font-size:21px; }
+  .wheel-bottom-link b { font-size:11px; }
+  .wheel-bottom-link small { font-size:8px; }
+}
 </style>
 </head>
 
@@ -1616,6 +1667,12 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
 
 </main>
 
+<a class="wheel-bottom-bar" href="wheel.html" aria-label="Mở vòng quay may mắn">
+  <span class="wheel-bottom-link">
+    <span class="wheel-icon">🎡</span>
+    <span class="wheel-copy"><b>VÒNG QUAY MAY MẮN</b><small>Quay miễn phí • Nhận Xu</small></span>
+  </span>
+</a>
 
 <div class="bottom">
  <div class="contact-menu" id="contactMenu">
