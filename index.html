@@ -5604,30 +5604,31 @@ try {
   window.customerLogin = async function() {
     const message = document.getElementById("vkl-auth-message");
     try {
-      const username = document.getElementById("vkl-auth-username").value.trim();
+      const loginName = document.getElementById("vkl-auth-username").value.trim();
       const password = document.getElementById("vkl-auth-password").value;
+      const isAdminEmail = loginName.toLowerCase() === "haphamngu123@gmail.com";
 
-      if (!/^[A-Za-z0-9]{4,20}$/.test(username)) {
-        throw new Error("Tên tài khoản phải có 4–20 ký tự chữ và số.");
+      if (!isAdminEmail && !/^[A-Za-z0-9]{4,20}$/.test(loginName)) {
+        throw new Error("Nhập email quản trị hoặc tên tài khoản 4–20 ký tự chữ và số.");
       }
 
-      await window.auth.signInWithEmailAndPassword(
-        username.toLowerCase() + "@login.vukhongglong.com",
-        password
-      );
+      const email = isAdminEmail
+        ? "haphamngu123@gmail.com"
+        : loginName.toLowerCase() + "@login.vukhongglong.com";
+
+      await window.auth.signInWithEmailAndPassword(email, password);
 
       alert("Đăng nhập thành công!");
       closeModal();
-   } catch(error) {
-  const errors = {
-    "auth/invalid-credential": "Tên tài khoản hoặc mật khẩu không chính xác!",
-    "auth/user-not-found": "Không tìm thấy tài khoản này!",
-    "auth/wrong-password": "Mật khẩu không chính xác!",
-    "auth/too-many-requests": "Bạn đã thử quá nhiều lần. Vui lòng thử lại sau!"
-  };
-
-  message.textContent = errors[error.code] || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!";
-}
+    } catch(error) {
+      const errors = {
+        "auth/invalid-credential": "Email/tên tài khoản hoặc mật khẩu không chính xác. Nếu vừa liên kết, hãy chắc chắn dùng đúng mật khẩu đã tạo.",
+        "auth/user-not-found": "Không tìm thấy tài khoản này!",
+        "auth/wrong-password": "Mật khẩu không chính xác!",
+        "auth/too-many-requests": "Bạn đã thử quá nhiều lần. Vui lòng thử lại sau!"
+      };
+      message.textContent = errors[error.code] || ("Đăng nhập thất bại: " + error.message);
+    }
   };
 
 } catch(error) {
