@@ -70,7 +70,7 @@ canvas{width:100%;height:auto;display:block;border-radius:50%}
   pendingLastTime=0;
   const step=now=>{
    if(!spinning)return;
-   if(pendingLastTime){const dt=Math.min((now-pendingLastTime)/1000,0.05);const before=Math.floor(angle/(Math.PI*2/24));angle+=2.8*dt;const after=Math.floor(angle/(Math.PI*2/24));if(after!==before){lastPeg=after;pointerTick();}draw();}
+   if(pendingLastTime){const dt=Math.min((now-pendingLastTime)/1000,0.05);const before=Math.floor(angle/(Math.PI*2/24));angle+=18*dt;const after=Math.floor(angle/(Math.PI*2/24));if(after!==before){lastPeg=after;pointerTick();}draw();}
    pendingLastTime=now;
    pendingFrame=requestAnimationFrame(step);
   };
