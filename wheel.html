@@ -110,9 +110,8 @@ canvas{width:100%;height:auto;display:block;border-radius:50%}
   // Dừng chuyển động chờ sau 10 giây nếu máy chủ chưa trả kết quả.
   // Yêu cầu vẫn được giữ để nhận kết quả thật từ máy chủ, không tự tạo phần thưởng.
   pendingStopTimer=setTimeout(()=>{
-   brakePendingSpin();
    $("spinState").textContent="● Đang chờ kết quả";
-   $("hint").textContent="Vòng quay đã tạm dừng. Máy chủ vẫn đang xác nhận phần thưởng; ô dưới kim chưa phải kết quả chính thức.";
+   $("hint").textContent="Máy chủ đang xác nhận phần thưởng. Vòng quay vẫn tiếp tục chạy...";
   },10000);
   try{
    const requestId="wheel_"+Date.now()+"_"+Math.random().toString(36).slice(2,12);
