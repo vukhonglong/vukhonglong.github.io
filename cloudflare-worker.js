@@ -25,8 +25,15 @@ function pemToArrayBuffer(pem) {
   return bytes.buffer;
 }
 
+let cachedGoogleToken = "";
+let cachedGoogleTokenExpiresAt = 0;
+let googleTokenRequest = null;
+
 async function googleAccessToken(env) {
   const now = Math.floor(Date.now() / 1000);
+  if (cachedGoogleToken && cachedGoogleTokenExpiresAt > now + 120) return cachedGoogleToken;
+  if (googleTokenRequest) return googleTokenRequest;
+  googleTokenRequest = (async () => {
   const header = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const claims = b64url(JSON.stringify({
     iss: env.FIREBASE_CLIENT_EMAIL,
@@ -61,7 +68,12 @@ async function googleAccessToken(env) {
   if (!response.ok || !data.access_token) {
     throw new Error("Không xác thực được tài khoản dịch vụ Firebase: " + (data.error_description || data.error || response.status));
   }
-  return data.access_token;
+  cachedGoogleToken = data.access_token;
+  cachedGoogleTokenExpiresAt = now + Number(data.expires_in || 3600);
+  return cachedGoogleToken;
+  })();
+  try { return await googleTokenRequest; }
+  finally { googleTokenRequest = null; }
 }
 
 async function verifyFirebaseUser(idToken) {
@@ -230,17 +242,16 @@ export default {
         return Response.json({ error: "Mã lượt quay không hợp lệ." }, { status: 400, headers: cors });
       }
       const spinId = isAdmin ? user.uid + "_admin_" + requestId : user.uid + "_" + date;
-      const settings = await firestoreRequest(base + "/siteSettings/luckyWheel", token);
-      const rawPrizes = settings.fields && settings.fields.prizes && settings.fields.prizes.arrayValue
-        ? (settings.fields.prizes.arrayValue.values || []).map(v => v.stringValue || "")
-        : [];
-      const prizes = parsePrizes(rawPrizes);
-      if (!isAdmin && settings.fields && settings.fields.freeDailyEnabled && settings.fields.freeDailyEnabled.booleanValue === false) {
-        throw new Error("Lượt quay miễn phí hôm nay đang tạm khóa.");
-      }
-
       const spinName = base + "/luckyWheelSpins/" + encodeURIComponent(spinId);
-      const existing = await fetch(spinName, { headers: { Authorization: "Bearer " + token } });
+      const walletDocumentName = documentRoot + "/wallets/" + encodeURIComponent(user.uid);
+      const walletUrl = base + "/wallets/" + encodeURIComponent(user.uid);
+
+      // Các thao tác đọc độc lập được chạy song song để giảm thời gian chờ.
+      const [settings, existing, wallet] = await Promise.all([
+        firestoreRequest(base + "/siteSettings/luckyWheel", token),
+        fetch(spinName, { headers: { Authorization: "Bearer " + token } }),
+        firestoreRequest(walletUrl, token)
+      ]);
       if (existing.ok) {
         return Response.json({ error: isAdmin ? "Lượt quay này đã được xử lý." : "Bạn đã quay hôm nay rồi." }, { status: 409, headers: cors });
       }
@@ -249,9 +260,13 @@ export default {
         throw new Error("Không kiểm tra được lượt quay: " + errText);
       }
 
-      const walletDocumentName = documentRoot + "/wallets/" + encodeURIComponent(user.uid);
-      const walletUrl = base + "/wallets/" + encodeURIComponent(user.uid);
-      const wallet = await firestoreRequest(walletUrl, token);
+      const rawPrizes = settings.fields && settings.fields.prizes && settings.fields.prizes.arrayValue
+        ? (settings.fields.prizes.arrayValue.values || []).map(v => v.stringValue || "")
+        : [];
+      const prizes = parsePrizes(rawPrizes);
+      if (!isAdmin && settings.fields && settings.fields.freeDailyEnabled && settings.fields.freeDailyEnabled.booleanValue === false) {
+        throw new Error("Lượt quay miễn phí hôm nay đang tạm khóa.");
+      }
       const fields = wallet.fields || {};
       const coinsField = fields.coins || {};
       const currentCoins = Number(coinsField.integerValue ?? coinsField.doubleValue ?? 0);
