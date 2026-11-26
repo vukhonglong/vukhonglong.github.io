@@ -79,9 +79,9 @@ canvas{width:100%;height:auto;display:block;border-radius:50%}
    const target=((Math.PI*2)-(idx+randomPosition)*step)%(Math.PI*2);
    const current=((angle%(Math.PI*2))+Math.PI*2)%(Math.PI*2);
    const delta=(target-current+Math.PI*2)%(Math.PI*2)+Math.PI*2*4;
-   const startAngle=angle,duration=4800,startAt=performance.now();
+   const startAngle=angle,duration=6500,startAt=performance.now();
    function animate(now){
-     const t=Math.min(1,(now-startAt)/duration),ease=1-Math.pow(1-t,5);
+     const t=Math.min(1,(now-startAt)/duration),ease=1-Math.pow(1-t,4);
      angle=startAngle+delta*ease;
      const pegNow=Math.floor(angle/(Math.PI*2/24));while(lastPeg<pegNow){lastPeg++;pointerTick();}
      draw();if(t<1)requestAnimationFrame(animate);else finish(data);
