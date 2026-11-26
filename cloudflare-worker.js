@@ -186,8 +186,15 @@ export default {
       }
 
             if (action === "history") {
-        const historyResponse = await firestoreRequest(base + "/luckyWheelSpins?pageSize=1000", token);
-        const documents = Array.isArray(historyResponse.documents) ? historyResponse.documents : [];
+        let documents = [];
+        let nextPageToken = "";
+        for (let page = 0; page < 5; page++) {
+          const pageUrl = base + "/luckyWheelSpins?pageSize=300" + (nextPageToken ? "&pageToken=" + encodeURIComponent(nextPageToken) : "");
+          const historyResponse = await firestoreRequest(pageUrl, token);
+          documents = documents.concat(Array.isArray(historyResponse.documents) ? historyResponse.documents : []);
+          nextPageToken = historyResponse.nextPageToken || "";
+          if (!nextPageToken) break;
+        }
         const entries = documents
           .filter(document => document.fields && document.fields.uid && document.fields.uid.stringValue === user.uid)
           .map(document => {
