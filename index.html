@@ -3026,13 +3026,8 @@ if (transferUser) {
      <div style="display:inline-block;margin-top:14px;padding:8px 15px;border-radius:30px;background:#fff4d8;color:#9a410d;font-size:12px;font-weight:950">TỔNG THƯỞNG TỐI ĐA: +880.000 XU</div>
     </div>
     <div style="margin:17px 0 10px;font-weight:950;font-size:17px">🏆 CÁC MỐC NẠP VÀ THƯỞNG</div>
-    <div style="display:grid;grid-template-columns:1fr;gap:9px">
-     <div style="display:flex;justify-content:space-between;gap:10px;padding:13px 14px;border:1px solid #f2c77d;border-radius:14px;background:#fff;color:#54230c"><b>10.000 Xu</b><b style="color:#d05a12">+10.000 Xu</b></div>
-     <div style="display:flex;justify-content:space-between;gap:10px;padding:13px 14px;border:1px solid #f2c77d;border-radius:14px;background:#fff;color:#54230c"><b>20.000 Xu</b><b style="color:#d05a12">+20.000 Xu</b></div>
-     <div style="display:flex;justify-content:space-between;gap:10px;padding:13px 14px;border:1px solid #f2c77d;border-radius:14px;background:#fff;color:#54230c"><b>50.000 Xu</b><b style="color:#d05a12">+50.000 Xu</b></div>
-     <div style="display:flex;justify-content:space-between;gap:10px;padding:13px 14px;border:1px solid #f2c77d;border-radius:14px;background:#fff;color:#54230c"><b>100.000 Xu</b><b style="color:#d05a12">+100.000 Xu</b></div>
-     <div style="display:flex;justify-content:space-between;gap:10px;padding:13px 14px;border:1px solid #f2c77d;border-radius:14px;background:#fff;color:#54230c"><b>200.000 Xu</b><b style="color:#d05a12">+200.000 Xu</b></div>
-     <div style="display:flex;justify-content:space-between;gap:10px;padding:13px 14px;border:1px solid #f2c77d;border-radius:14px;background:linear-gradient(100deg,#fff0c2,#ffe0a1);color:#54230c"><b>500.000 Xu</b><b style="color:#d05a12">+500.000 Xu</b></div>
+    <div id="vkl-topup-milestone-list" style="display:grid;grid-template-columns:1fr;gap:10px">
+     <div style="padding:15px;border-radius:13px;background:#fff4dc;color:#75400d;text-align:center">Đang kiểm tra các mốc nạp của bạn...</div>
     </div>
     <div style="margin-top:13px;padding:14px;border-radius:14px;background:#fff4dc;border:1px solid #f2d39a;color:#75400d;font-size:12px;line-height:1.65">
      <b>📌 CÁCH TÍNH THƯỞNG</b><br>
@@ -3045,6 +3040,7 @@ if (transferUser) {
     <button type="button" onclick='openModal("events")' style="width:100%;margin-top:9px;padding:12px;border:1px solid #d5a75d;border-radius:13px;background:transparent;color:inherit;font-weight:850">← QUAY LẠI SỰ KIỆN</button>
    </div>
   `;
+  if(window.loadTopupMilestones) window.loadTopupMilestones();
  }
 
  if(type === "events"){
@@ -3543,6 +3539,7 @@ select {
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-functions-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script>
 (function(){
@@ -9066,6 +9063,87 @@ body.dark #serviceStatusGear {
     if(event.target && event.target.id==="vkl-acc-search"){ inventoryPage=0; renderList(); }
   });
 })();
+</script>
+
+
+<script>
+// ===== NẠP THƯỞNG X2: MỞ KHÓA THEO GIAO DỊCH ĐÃ ĐƯỢC ADMIN XÁC NHẬN =====
+window.loadTopupMilestones = async function() {
+  const list = document.getElementById("vkl-topup-milestone-list");
+  if (!list) return;
+  const user = window.auth && window.auth.currentUser;
+  if (!user) {
+    list.innerHTML = '<div style="padding:14px;border-radius:13px;background:#fff4dc;color:#75400d;text-align:center">Vui lòng đăng nhập để kiểm tra và nhận thưởng.</div>';
+    return;
+  }
+
+  list.innerHTML = '<div style="padding:14px;border-radius:13px;background:#fff4dc;color:#75400d;text-align:center">Đang kiểm tra giao dịch nạp đã xác nhận...</div>';
+  try {
+    const api = firebase.app().functions("asia-southeast1");
+    const response = await api.httpsCallable("getTopupMilestoneStatus")({});
+    const milestones = response.data && Array.isArray(response.data.milestones) ? response.data.milestones : [];
+    if (!milestones.length) throw new Error("Chưa tải được danh sách mốc thưởng.");
+
+    list.innerHTML = "";
+    const money = value => Number(value).toLocaleString("vi-VN");
+    milestones.forEach(item => {
+      const card = document.createElement("div");
+      card.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 14px;border:1px solid " + (item.claimed ? "#86c9a6" : item.unlocked ? "#e8b85e" : "#d7dbe3") + ";border-radius:14px;background:" + (item.claimed ? "#e8f8ef" : item.unlocked ? "linear-gradient(100deg,#fff0c2,#ffe0a1)" : "#f1f3f7") + ";color:#54230c";
+      const info = document.createElement("div");
+      info.style.cssText = "min-width:0";
+      const amount = document.createElement("b");
+      amount.style.cssText = "display:block;font-size:15px";
+      amount.textContent = "NẠP ĐỦ " + money(item.amount) + " Xu";
+      const bonus = document.createElement("small");
+      bonus.style.cssText = "display:block;margin-top:5px;color:#a34e12;font-weight:800";
+      bonus.textContent = "Thưởng thêm +" + money(item.bonus) + " Xu";
+      const state = document.createElement("small");
+      state.style.cssText = "display:block;margin-top:4px;font-size:11px;color:" + (item.claimed ? "#16834c" : item.unlocked ? "#9a5a12" : "#667085");
+      state.textContent = item.claimed ? "✓ Đã nhận thưởng mốc này" : item.unlocked ? "✓ Đã xác nhận đủ điều kiện" : "🔒 Chờ nạp và admin xác nhận";
+      info.append(amount, bonus, state);
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.style.cssText = "flex:none;min-width:104px;padding:10px 12px;border:0;border-radius:10px;font-size:11px;font-weight:950;color:#fff;background:" + (item.claimed ? "#87918b" : item.unlocked ? "linear-gradient(100deg,#e17b17,#f4a72e)" : "#9aa2af") + ";";
+      button.disabled = !item.unlocked || item.claimed;
+      button.textContent = item.claimed ? "ĐÃ NHẬN" : item.unlocked ? "NHẬN +" + money(item.bonus) : "CHƯA MỞ";
+      if (item.unlocked && !item.claimed) {
+        button.onclick = () => window.claimTopupMilestone(item.amount, button);
+      }
+      card.append(info, button);
+      list.appendChild(card);
+    });
+  } catch (error) {
+    console.error("Lỗi tải mốc thưởng X2:", error);
+    list.innerHTML = '<div style="padding:14px;border-radius:13px;background:#fff0f0;color:#a12636;text-align:center">Không tải được mốc thưởng: ' + String(error.message || error).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])) + '</div>';
+  }
+};
+
+window.claimTopupMilestone = async function(amount, button) {
+  if (!window.auth || !window.auth.currentUser) {
+    alert("Vui lòng đăng nhập để nhận thưởng.");
+    return;
+  }
+  if (button) {
+    button.disabled = true;
+    button.textContent = "ĐANG NHẬN...";
+  }
+  try {
+    const api = firebase.app().functions("asia-southeast1");
+    const response = await api.httpsCallable("claimTopupMilestone")({ amount: Number(amount) });
+    const result = response.data || {};
+    const balance = document.getElementById("vkl-coin-balance");
+    const homeBalance = document.getElementById("home-info-balance");
+    if (balance) balance.textContent = Number(result.balance || 0).toLocaleString("vi-VN") + " Xu";
+    if (homeBalance) homeBalance.textContent = Number(result.balance || 0).toLocaleString("vi-VN") + " Xu";
+    alert("Đã nhận +" + Number(result.bonus || amount).toLocaleString("vi-VN") + " Xu thành công!");
+    await window.loadTopupMilestones();
+  } catch (error) {
+    console.error("Lỗi nhận thưởng X2:", error);
+    alert("Không nhận được thưởng: " + (error.message || "Lỗi không xác định"));
+    await window.loadTopupMilestones();
+  }
+};
 </script>
 
 </body>
