@@ -167,6 +167,24 @@ export default {
       const documentRoot = "projects/" + env.FIREBASE_PROJECT_ID + "/databases/(default)/documents";
       const base = "https://firestore.googleapis.com/v1/" + documentRoot;
 
+      if (action === "savePrizes") {
+        if (!isAdmin) return Response.json({ error: "Bạn không có quyền quản lý." }, { status: 403, headers: cors });
+        const prizes = parsePrizes(body.prizes);
+        const values = prizes.map(prize => ({ stringValue: prize.label + " | " + prize.weight }));
+        const settingsUrl = base + "/siteSettings/luckyWheel?updateMask.fieldPaths=prizes&updateMask.fieldPaths=updatedAt&updateMask.fieldPaths=updatedBy";
+        await firestoreRequest(settingsUrl, token, {
+          method: "PATCH",
+          body: JSON.stringify({
+            fields: {
+              prizes: { arrayValue: { values } },
+              updatedAt: { timestampValue: new Date().toISOString() },
+              updatedBy: { stringValue: user.uid }
+            }
+          })
+        });
+        return Response.json({ success: true, count: prizes.length, total: 100 }, { status: 200, headers: cors });
+      }
+
             if (action === "status") {
         if (isAdmin) return Response.json({ isAdmin: true, dailyUsed: false, freeDailyEnabled: true, date }, { status: 200, headers: cors });
         const spinUrl = base + "/luckyWheelSpins/" + encodeURIComponent(user.uid + "_" + date);
