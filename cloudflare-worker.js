@@ -185,7 +185,38 @@ export default {
         return Response.json({ success: true, count: prizes.length, total: 100 }, { status: 200, headers: cors });
       }
 
-            if (action === "status") {
+            if (action === "history") {
+        const historyResponse = await firestoreRequest(base + ":runQuery", token, {
+          method: "POST",
+          body: JSON.stringify({
+            structuredQuery: {
+              from: [{ collectionId: "luckyWheelSpins" }],
+              where: {
+                fieldFilter: {
+                  field: { fieldPath: "uid" },
+                  op: "EQUAL",
+                  value: { stringValue: user.uid }
+                }
+              },
+              orderBy: [{ field: { fieldPath: "createdAt" }, direction: "DESCENDING" }],
+              limit: 100
+            }
+          })
+        });
+        const entries = (Array.isArray(historyResponse) ? historyResponse : [])
+          .filter(item => item.document && item.document.fields)
+          .map(item => {
+            const fields = item.document.fields;
+            return {
+              prize: fields.prize?.stringValue || "—",
+              date: fields.date?.stringValue || "",
+              createdAt: fields.createdAt?.timestampValue || ""
+            };
+          });
+        return Response.json({ entries }, { status: 200, headers: cors });
+      }
+
+      if (action === "status") {
         if (isAdmin) return Response.json({ isAdmin: true, dailyUsed: false, freeDailyEnabled: true, date }, { status: 200, headers: cors });
         const spinUrl = base + "/luckyWheelSpins/" + encodeURIComponent(user.uid + "_" + date);
         const settingsUrl = base + "/siteSettings/luckyWheel";
