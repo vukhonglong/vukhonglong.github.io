@@ -9067,48 +9067,54 @@ body.dark #serviceStatusGear {
 
 
 <script>
-// ===== NẠP THƯỞNG X2: MỞ KHÓA THEO GIAO DỊCH ĐÃ ĐƯỢC ADMIN XÁC NHẬN =====
+// ===== NẠP THƯỞNG X2: FIRESTORE TRỰC TIẾP, KHÔNG DÙNG CLOUD FUNCTIONS =====
 window.loadTopupMilestones = async function() {
   const list = document.getElementById("vkl-topup-milestone-list");
   if (!list) return;
   const user = window.auth && window.auth.currentUser;
   if (!user) {
-    list.innerHTML = '<div style="padding:14px;border-radius:13px;background:#fff4dc;color:#75400d;text-align:center">Vui lòng đăng nhập để kiểm tra và nhận thưởng.</div>';
+    list.innerHTML = '<div style="padding:14px;border-radius:13px;background:#fff4dc;color:#75400d;text-align:center">Vui lòng đăng nhập để kiểm tra mốc thưởng.</div>';
     return;
   }
 
-  list.innerHTML = '<div style="padding:14px;border-radius:13px;background:#fff4dc;color:#75400d;text-align:center">Đang kiểm tra giao dịch nạp đã xác nhận...</div>';
+  list.innerHTML = '<div style="padding:14px;border-radius:13px;background:#fff4dc;color:#75400d;text-align:center">Đang kiểm tra giao dịch nạp...</div>';
   try {
-    const api = firebase.app().functions("asia-southeast1");
-    const response = await api.httpsCallable("getTopupMilestoneStatus")({});
-    const milestones = response.data && Array.isArray(response.data.milestones) ? response.data.milestones : [];
-    if (!milestones.length) throw new Error("Chưa tải được danh sách mốc thưởng.");
+    const db = firebase.firestore();
+    const snap = await db.collection("topupRequests").where("uid", "==", user.uid).get();
+    const requests = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const deposits = requests.filter(r => r.status === "reviewed" && r.requestType !== "bonus_claim");
+    const claims = requests.filter(r => r.requestType === "bonus_claim");
+    const milestones = [10000, 20000, 50000, 100000, 200000, 500000];
+    const money = value => Number(value).toLocaleString("vi-VN");
 
     list.innerHTML = "";
-    const money = value => Number(value).toLocaleString("vi-VN");
-    milestones.forEach(item => {
+    milestones.forEach(amount => {
+      const claim = claims.find(r => Number(r.milestone) === amount);
+      const claimed = !!claim && claim.status === "reviewed";
+      const requested = !!claim && claim.status !== "rejected" && !claimed;
+      const unlocked = deposits.some(r => Number(r.amount || 0) >= amount);
       const card = document.createElement("div");
-      card.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 14px;border:1px solid " + (item.claimed ? "#86c9a6" : item.unlocked ? "#e8b85e" : "#d7dbe3") + ";border-radius:14px;background:" + (item.claimed ? "#e8f8ef" : item.unlocked ? "linear-gradient(100deg,#fff0c2,#ffe0a1)" : "#f1f3f7") + ";color:#54230c";
+      card.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 14px;border:1px solid " + (claimed ? "#86c9a6" : unlocked ? "#e8b85e" : "#d7dbe3") + ";border-radius:14px;background:" + (claimed ? "#e8f8ef" : unlocked ? "linear-gradient(100deg,#fff0c2,#ffe0a1)" : "#f1f3f7") + ";color:#54230c";
       const info = document.createElement("div");
       info.style.cssText = "min-width:0";
-      const amount = document.createElement("b");
-      amount.style.cssText = "display:block;font-size:15px";
-      amount.textContent = "NẠP ĐỦ " + money(item.amount) + " Xu";
+      const title = document.createElement("b");
+      title.style.cssText = "display:block;font-size:15px";
+      title.textContent = "NẠP ĐỦ " + money(amount) + " Xu";
       const bonus = document.createElement("small");
       bonus.style.cssText = "display:block;margin-top:5px;color:#a34e12;font-weight:800";
-      bonus.textContent = "Thưởng thêm +" + money(item.bonus) + " Xu";
+      bonus.textContent = "Thưởng thêm +" + money(amount) + " Xu";
       const state = document.createElement("small");
-      state.style.cssText = "display:block;margin-top:4px;font-size:11px;color:" + (item.claimed ? "#16834c" : item.unlocked ? "#9a5a12" : "#667085");
-      state.textContent = item.claimed ? "✓ Đã nhận thưởng mốc này" : item.unlocked ? "✓ Đã xác nhận đủ điều kiện" : "🔒 Chờ nạp và admin xác nhận";
-      info.append(amount, bonus, state);
+      state.style.cssText = "display:block;margin-top:4px;font-size:11px;color:" + (claimed ? "#16834c" : requested ? "#9a5a12" : unlocked ? "#9a5a12" : "#667085");
+      state.textContent = claimed ? "✓ Admin đã xác nhận thưởng" : requested ? "⌛ Đã gửi yêu cầu, chờ admin xử lý" : unlocked ? "✓ Đủ điều kiện nhận thưởng" : "🔒 Chờ nạp và admin xác nhận";
+      info.append(title, bonus, state);
 
       const button = document.createElement("button");
       button.type = "button";
-      button.style.cssText = "flex:none;min-width:104px;padding:10px 12px;border:0;border-radius:10px;font-size:11px;font-weight:950;color:#fff;background:" + (item.claimed ? "#87918b" : item.unlocked ? "linear-gradient(100deg,#e17b17,#f4a72e)" : "#9aa2af") + ";";
-      button.disabled = !item.unlocked || item.claimed;
-      button.textContent = item.claimed ? "ĐÃ NHẬN" : item.unlocked ? "NHẬN +" + money(item.bonus) : "CHƯA MỞ";
-      if (item.unlocked && !item.claimed) {
-        button.onclick = () => window.claimTopupMilestone(item.amount, button);
+      button.style.cssText = "flex:none;min-width:108px;padding:10px 12px;border:0;border-radius:10px;font-size:11px;font-weight:950;color:#fff;background:" + (claimed || requested || !unlocked ? "#9aa2af" : "linear-gradient(100deg,#e17b17,#f4a72e)") + ";";
+      button.disabled = !unlocked || claimed || requested;
+      button.textContent = claimed ? "ĐÃ NHẬN" : requested ? "ĐÃ GỬI" : unlocked ? "NHẬN +" + money(amount) : "CHƯA MỞ";
+      if (unlocked && !claimed && !requested) {
+        button.onclick = () => window.claimTopupMilestone(amount, button);
       }
       card.append(info, button);
       list.appendChild(card);
@@ -9120,27 +9126,48 @@ window.loadTopupMilestones = async function() {
 };
 
 window.claimTopupMilestone = async function(amount, button) {
-  if (!window.auth || !window.auth.currentUser) {
+  const user = window.auth && window.auth.currentUser;
+  if (!user) {
     alert("Vui lòng đăng nhập để nhận thưởng.");
     return;
   }
+  const milestone = Number(amount);
+  const allowed = [10000, 20000, 50000, 100000, 200000, 500000];
+  if (!allowed.includes(milestone)) return;
   if (button) {
     button.disabled = true;
-    button.textContent = "ĐANG NHẬN...";
+    button.textContent = "ĐANG GỬI...";
   }
   try {
-    const api = firebase.app().functions("asia-southeast1");
-    const response = await api.httpsCallable("claimTopupMilestone")({ amount: Number(amount) });
-    const result = response.data || {};
-    const balance = document.getElementById("vkl-coin-balance");
-    const homeBalance = document.getElementById("home-info-balance");
-    if (balance) balance.textContent = Number(result.balance || 0).toLocaleString("vi-VN") + " Xu";
-    if (homeBalance) homeBalance.textContent = Number(result.balance || 0).toLocaleString("vi-VN") + " Xu";
-    alert("Đã nhận +" + Number(result.bonus || amount).toLocaleString("vi-VN") + " Xu thành công!");
+    const db = firebase.firestore();
+    const requests = await db.collection("topupRequests").where("uid", "==", user.uid).get();
+    const rows = requests.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const eligible = rows.some(r => r.status === "reviewed" && r.requestType !== "bonus_claim" && Number(r.amount || 0) >= milestone);
+    if (!eligible) throw new Error("Chưa có giao dịch nạp được admin xác nhận đủ mốc.");
+    const existing = rows.find(r => r.requestType === "bonus_claim" && Number(r.milestone) === milestone);
+    if (existing && existing.status !== "rejected") {
+      throw new Error(existing.status === "reviewed" ? "Mốc này đã được xác nhận thưởng." : "Bạn đã gửi yêu cầu cho mốc này rồi.");
+    }
+
+    const requestId = "x2_" + user.uid + "_" + milestone;
+    await db.collection("topupRequests").doc(requestId).set({
+      uid: user.uid,
+      username: String((user.email || "").split("@")[0] || "Khách hàng").slice(0, 60),
+      userId: "",
+      email: String(user.email || "").slice(0, 120),
+      amount: milestone,
+      milestone: milestone,
+      bonusAmount: milestone,
+      requestType: "bonus_claim",
+      transferNote: "Yêu cầu nhận thưởng X2 mốc " + milestone.toLocaleString("vi-VN") + " Xu. Admin vui lòng cộng " + milestone.toLocaleString("vi-VN") + " Xu vào ví sau khi kiểm tra.",
+      status: "pending",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    alert("Đã gửi yêu cầu nhận thưởng mốc " + milestone.toLocaleString("vi-VN") + " Xu. Admin sẽ kiểm tra và cộng thưởng vào ví.");
     await window.loadTopupMilestones();
   } catch (error) {
-    console.error("Lỗi nhận thưởng X2:", error);
-    alert("Không nhận được thưởng: " + (error.message || "Lỗi không xác định"));
+    console.error("Lỗi gửi yêu cầu thưởng X2:", error);
+    alert("Không gửi được yêu cầu: " + (error.message || "Lỗi không xác định"));
     await window.loadTopupMilestones();
   }
 };
