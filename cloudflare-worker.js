@@ -198,7 +198,6 @@ export default {
                   value: { stringValue: user.uid }
                 }
               },
-              orderBy: [{ field: { fieldPath: "createdAt" }, direction: "DESCENDING" }],
               limit: 100
             }
           })
