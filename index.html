@@ -1491,10 +1491,10 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
 
 </section>
 
-<a class="wheel-bottom-bar" id="homeWheelBanner" href="wheel.html" aria-label="Mở vòng quay may mắn">
+<a class="wheel-bottom-bar" id="homeWheelBanner" href="#" onclick="event.preventDefault();openMainTab('events')" aria-label="Mở mục Sự kiện">
   <span class="wheel-bottom-link">
-    <span class="wheel-icon">🎡</span>
-    <span class="wheel-copy"><b>VÒNG QUAY MAY MẮN</b><small>Quay miễn phí • Nhận Xu</small></span>
+    <span class="wheel-icon">🎉</span>
+    <span class="wheel-copy"><b>SỰ KIỆN</b><small>Khám phá các sự kiện đang có</small></span>
   </span>
 </a>
 
@@ -3002,6 +3002,28 @@ if (transferUser) {
   if(window.loadCustomerOrderHistory) window.loadCustomerOrderHistory();
  }
 
+ if(type === "events"){
+  body.innerHTML = `
+   <div style="max-width:560px;margin:0 auto">
+    <div style="text-align:center;margin:8px 0 20px">
+     <div style="font-size:48px">🎉</div>
+     <h2 style="margin:8px 0 5px">SỰ KIỆN</h2>
+     <p class="muted" style="margin:0">Các sự kiện nổi bật tại VUKHONGLONG</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:13px">
+     <div style="display:flex;align-items:center;gap:14px;padding:17px;border:1px solid #b9a9ff;border-radius:17px;background:linear-gradient(110deg,#eeeaff,#f7f5ff);color:#282044">
+      <div style="width:58px;height:58px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:15px;background:linear-gradient(135deg,#6d4bea,#9a65f5);font-size:31px">🎡</div>
+      <div style="min-width:0"><b style="display:block;font-size:16px">VÒNG QUAY MAY MẮN</b><small style="display:block;margin-top:5px;color:#655b82">Quay thưởng và nhận Xu</small></div>
+     </div>
+     <div style="display:flex;align-items:center;gap:14px;padding:17px;border:1px solid #ffd28a;border-radius:17px;background:linear-gradient(110deg,#fff2d9,#fffaf0);color:#49351a">
+      <div style="width:58px;height:58px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:15px;background:linear-gradient(135deg,#f59e0b,#f97316);font-size:31px">🎁</div>
+      <div style="min-width:0"><b style="display:block;font-size:16px">NẠP THƯỞNG X2</b><small style="display:block;margin-top:5px;color:#80643b">Sự kiện nạp nhận thưởng gấp đôi</small></div>
+     </div>
+    </div>
+   </div>
+  `;
+ }
+
  if(type === "more"){
   body.innerHTML = `
    <h2>VUKHONGLONG</h2>
@@ -3084,7 +3106,8 @@ if(
  type === "transfer" ||
  type === "history" ||
  type === "mailbox" ||
- type === "progress"
+ type === "progress" ||
+ type === "events"
 ){
  modal.classList.add("page-mode");
  document.getElementById("homeWheelBanner")?.classList.add("other-main-tab");
