@@ -27,6 +27,21 @@ function pemToArrayBuffer(pem) {
 
 let googleTokenCache = null;
 
+async function fetchWithTimeout(url, options = {}, stage = "kết nối Firebase") {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (error) {
+    if (error && error.name === "AbortError") {
+      throw new Error("Máy chủ quá thời gian tại bước: " + stage + " (8 giây).");
+    }
+    throw new Error("Lỗi tại bước " + stage + ": " + (error.message || String(error)));
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function googleAccessToken(env) {
   const now = Math.floor(Date.now() / 1000);
   if (googleTokenCache && googleTokenCache.expiresAt > now + 60) return googleTokenCache.accessToken;
@@ -52,7 +67,7 @@ async function googleAccessToken(env) {
     new TextEncoder().encode(unsigned)
   );
   const assertion = unsigned + "." + b64url(signature);
-  const response = await fetch("https://oauth2.googleapis.com/token", {
+  const response = await fetchWithTimeout("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -69,7 +84,7 @@ async function googleAccessToken(env) {
 }
 
 async function verifyFirebaseUser(idToken) {
-  const response = await fetch(
+  const response = await fetchWithTimeout(
     "https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=" + FIREBASE_API_KEY,
     {
       method: "POST",
@@ -125,7 +140,7 @@ function parsePrizes(raw) {
 }
 
 async function firestoreRequest(url, token, options = {}) {
-  const response = await fetch(url, {
+  const response = await fetchWithTimeout(url, {
     ...options,
     headers: {
       "Authorization": "Bearer " + token,
@@ -176,8 +191,8 @@ export default {
         const spinUrl = base + "/luckyWheelSpins/" + encodeURIComponent(user.uid + "_" + date);
         const settingsUrl = base + "/siteSettings/luckyWheel";
         const [spinResponse, settingsResponse] = await Promise.all([
-          fetch(spinUrl, { headers: { Authorization: "Bearer " + token } }),
-          fetch(settingsUrl, { headers: { Authorization: "Bearer " + token } })
+          fetchWithTimeout(spinUrl, { headers: { Authorization: "Bearer " + token } }, "đọc lịch sử lượt quay"),
+          fetchWithTimeout(settingsUrl, { headers: { Authorization: "Bearer " + token } }, "đọc cấu hình vòng quay")
         ]);
         if (!spinResponse.ok && spinResponse.status !== 404) throw new Error("Không kiểm tra được lượt quay hôm nay.");
         if (!settingsResponse.ok) throw new Error("Không tải được cấu hình vòng quay.");
@@ -202,7 +217,7 @@ export default {
       }
 
       const spinName = base + "/luckyWheelSpins/" + encodeURIComponent(spinId);
-      const existing = await fetch(spinName, { headers: { Authorization: "Bearer " + token } });
+      const existing = await fetchWithTimeout(spinName, { headers: { Authorization: "Bearer " + token } }, "kiểm tra lượt quay đã ghi");
       if (existing.ok) {
         // Nếu lần gọi trước đã ghi nhận thưởng nhưng trình duyệt bị timeout,
         // trả lại kết quả đã lưu thay vì báo lỗi hoặc cộng Xu lần thứ hai.
