@@ -65,18 +65,28 @@ canvas{width:100%;height:auto;display:block;border-radius:50%}
  async function loadSettings(){try{const s=await settingsRef.get();freeDailyEnabled=!(s.exists&&s.data().freeDailyEnabled===false);if(s.exists&&Array.isArray(s.data().prizes)&&s.data().prizes.length>=2){const saved=s.data().prizes.slice(0,12).map(toXu);const hasLegacy=saved.some(x=>!String(x).includes("|"));const currencyChanged=saved.some((x,i)=>String(x)!==String(s.data().prizes[i]));if(currencyChanged){await settingsRef.set({prizes:saved,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:user?.uid||"currency-migration"},{merge:true});}const hasMystery=saved.some(x=>/bí ẩn|ẩn danh|phần quà|quà ngẫu nhiên|mystery|mystery gift/i.test(String(x)));if(hasLegacy||hasMystery){prizes=defaults.map(([label,weight])=>({label,weight}));if(user&&(user.email||"").toLowerCase()===ADMIN){await settingsRef.set({prizes:defaults.map(([label,weight])=>label+" | "+weight),updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:user.uid},{merge:true});}}else{prizes=saved.map(parsePrize);}}}catch(e){console.warn(e);}draw();$("prizeInput").value=prizes.map(p=>p.label+" | "+p.weight).join("\n");updateFreeDailyUI();}
  async function refresh(){if(!user){$("spinBtn").disabled=true;$("accountState").textContent="Bạn chưa đăng nhập";$("spinState").textContent="● Chưa thể quay";$("hint").textContent="Hãy đăng nhập trên trang chủ rồi mở lại trang này.";return;}const signedInUser=user;$("accountState").textContent="Đã đăng nhập: "+(user.displayName||user.email||"Tài khoản");$("adminBox").style.display=isAdmin()?"block":"none";let accountName=user.displayName||user.email||"Tài khoản";try{const walletSnap=await db.collection("wallets").doc(signedInUser.uid).get();if(walletSnap.exists){const walletData=walletSnap.data();accountName=walletData.displayName||walletData.username||accountName;}}catch(e){console.warn("Không tải được tên tài khoản từ ví:",e);}if(user!==signedInUser)return;$("accountState").textContent="Đã đăng nhập: "+accountName;$("adminBox").style.display=isAdmin()?"block":"none";if(isAdmin()){hasSpun=false;$("spinBtn").disabled=spinning;$("spinState").textContent="● Admin: quay không giới hạn";$("hint").textContent="Tài khoản admin có thể quay nhiều lần, không giới hạn lượt.";const latest=await db.collection("luckyWheelSpins").where("uid","==",user.uid).limit(100).get().catch(()=>null);if(latest&&!latest.empty){const records=latest.docs.map(x=>x.data()).sort((a,b)=>(b.createdAt?.toMillis?.()||0)-(a.createdAt?.toMillis?.()||0));$("result").style.display="block";$("prizeText").textContent=toXu(records[0].prize||"");}else $("result").style.display="none";}else{statusLoadFailed=false;$("spinBtn").disabled=true;try{const wheelStatus=await workerRequest("status");statusLoadFailed=false;hasSpun=wheelStatus.dailyUsed===true;$( "spinBtn").disabled=hasSpun||spinning;$( "spinState").textContent=hasSpun?"● Đã quay hôm nay":"● Sẵn sàng";$( "hint").textContent=hasSpun?"Tài khoản này đã sử dụng lượt quay hôm nay.":"Mỗi tài khoản có 1 lượt quay miễn phí mỗi ngày.";if(hasSpun){$("result").style.display="block";const doc=await spinDoc().get();$("prizeText").textContent=doc.exists?toXu(doc.data().prize||""):"";}else $("result").style.display="none";}catch(e){statusLoadFailed=true;$("spinBtn").disabled=true;$("spinState").textContent="● Lỗi tải lượt quay";$("hint").textContent="Không đọc được dữ liệu lượt quay: "+e.message;}}await loadHistory();}
  $("closeWin").addEventListener("click",()=>$("winToast").classList.remove("show"));
- let pendingFrame=0,pendingLastTime=0;
+ let pendingFrame=0,pendingLastTime=0,pendingStartedAt=0;
  function startPendingSpin(){
-  pendingLastTime=0;
+  pendingLastTime=0;pendingStartedAt=performance.now();
   const step=now=>{
    if(!spinning)return;
-   if(pendingLastTime){const dt=Math.min((now-pendingLastTime)/1000,0.05);const before=Math.floor(angle/(Math.PI*2/24));angle+=10*dt;const after=Math.floor(angle/(Math.PI*2/24));if(after!==before){lastPeg=after;pointerTick();}draw();}
+   if(pendingLastTime){
+    const dt=Math.min((now-pendingLastTime)/1000,0.05);
+    const elapsed=(now-pendingStartedAt)/1000;
+    const progress=Math.min(elapsed/5,1);
+    const speed=14-(14-3.5)*(progress*progress*(3-2*progress));
+    const before=Math.floor(angle/(Math.PI*2/24));
+    angle+=speed*dt;
+    const after=Math.floor(angle/(Math.PI*2/24));
+    if(after!==before){lastPeg=after;pointerTick();}
+    draw();
+   }
    pendingLastTime=now;
    pendingFrame=requestAnimationFrame(step);
   };
   pendingFrame=requestAnimationFrame(step);
  }
- function stopPendingSpin(){if(pendingFrame)cancelAnimationFrame(pendingFrame);pendingFrame=0;pendingLastTime=0;}
+ function stopPendingSpin(){if(pendingFrame)cancelAnimationFrame(pendingFrame);pendingFrame=0;pendingLastTime=0;pendingStartedAt=0;}
  $("spinBtn").addEventListener("click",async()=>{
   if(!user||spinning||statusLoadFailed||(!isAdmin()&&hasSpun))return;
   spinning=true;lastPeg=Math.floor(angle/(Math.PI*2/24));$("spinBtn").disabled=true;
