@@ -186,6 +186,40 @@ export default {
       const documentRoot = "projects/" + env.FIREBASE_PROJECT_ID + "/databases/(default)/documents";
       const base = "https://firestore.googleapis.com/v1/" + documentRoot;
 
+
+      if (action === "history") {
+        const queryUrl = base + ":runQuery";
+        const queryResult = await firestoreRequest(queryUrl, token, {
+          method: "POST",
+          body: JSON.stringify({
+            structuredQuery: {
+              from: [{ collectionId: "luckyWheelSpins" }],
+              where: {
+                fieldFilter: {
+                  field: { fieldPath: "uid" },
+                  op: "EQUAL",
+                  value: { stringValue: user.uid }
+                }
+              },
+              limit: 100
+            }
+          })
+        });
+        const entries = (Array.isArray(queryResult) ? queryResult : [])
+          .filter(item => item.document && item.document.fields)
+          .map(item => {
+            const f = item.document.fields;
+            return {
+              prize: f.prize && f.prize.stringValue || "",
+              date: f.date && f.date.stringValue || "",
+              prizeIndex: Number(f.prizeIndex && (f.prizeIndex.integerValue ?? f.prizeIndex.doubleValue) || 0),
+              createdAt: f.createdAt && f.createdAt.timestampValue || ""
+            };
+          });
+        entries.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+        return Response.json({ entries }, { status: 200, headers: cors });
+      }
+
             if (action === "status") {
         if (isAdmin) return Response.json({ isAdmin: true, dailyUsed: false, freeDailyEnabled: true, date }, { status: 200, headers: cors });
         const spinUrl = base + "/luckyWheelSpins/" + encodeURIComponent(user.uid + "_" + date);
