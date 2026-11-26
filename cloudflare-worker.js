@@ -25,8 +25,11 @@ function pemToArrayBuffer(pem) {
   return bytes.buffer;
 }
 
+let googleTokenCache = null;
+
 async function googleAccessToken(env) {
   const now = Math.floor(Date.now() / 1000);
+  if (googleTokenCache && googleTokenCache.expiresAt > now + 60) return googleTokenCache.accessToken;
   const header = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const claims = b64url(JSON.stringify({
     iss: env.FIREBASE_CLIENT_EMAIL,
@@ -61,6 +64,7 @@ async function googleAccessToken(env) {
   if (!response.ok || !data.access_token) {
     throw new Error("Không xác thực được tài khoản dịch vụ Firebase: " + (data.error_description || data.error || response.status));
   }
+  googleTokenCache = { accessToken: data.access_token, expiresAt: now + Number(data.expires_in || 3600) };
   return data.access_token;
 }
 
@@ -200,7 +204,18 @@ export default {
       const spinName = base + "/luckyWheelSpins/" + encodeURIComponent(spinId);
       const existing = await fetch(spinName, { headers: { Authorization: "Bearer " + token } });
       if (existing.ok) {
-        return Response.json({ error: isAdmin ? "Lượt quay này đã được xử lý." : "Bạn đã quay hôm nay rồi." }, { status: 409, headers: cors });
+        // Nếu lần gọi trước đã ghi nhận thưởng nhưng trình duyệt bị timeout,
+        // trả lại kết quả đã lưu thay vì báo lỗi hoặc cộng Xu lần thứ hai.
+        const saved = await existing.json();
+        const savedFields = saved.fields || {};
+        return Response.json({
+          prize: savedFields.prize && savedFields.prize.stringValue || "",
+          prizeIndex: Number(savedFields.prizeIndex && (savedFields.prizeIndex.integerValue ?? savedFields.prizeIndex.doubleValue) || 0),
+          coinsAwarded: Number(savedFields.coinsAwarded && (savedFields.coinsAwarded.integerValue ?? savedFields.coinsAwarded.doubleValue) || 0),
+          balance: Number(savedFields.balanceAfter && (savedFields.balanceAfter.integerValue ?? savedFields.balanceAfter.doubleValue) || 0),
+          date: savedFields.date && savedFields.date.stringValue || date,
+          recovered: true
+        }, { status: 200, headers: cors });
       }
       if (existing.status !== 404) {
         const errText = await existing.text();
