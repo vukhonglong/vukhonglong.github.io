@@ -1326,6 +1326,19 @@ body.dark .nav.home-tabs button:active { color:#f1f3fa!important; background:tra
 @media(max-width:370px){ .nav.home-tabs button { font-size:10px; } .nav.home-tabs button span { font-size:20px; } }
 
 /* BANNER SỰ KIỆN Ở PHÍA TRÊN - KHÔNG CÓ NỀN BAO BÊN NGOÀI */
+/* BỎ GẠCH CHÂN MẶC ĐỊNH CỦA LINK BANNER SỰ KIỆN (KỂ CẢ CHỮ VÀ ICON) */
+.wheel-bottom-bar,
+.wheel-bottom-bar:link,
+.wheel-bottom-bar:visited,
+.wheel-bottom-bar:hover,
+.wheel-bottom-bar:active,
+.wheel-bottom-bar *,
+.wheel-bottom-bar *::before,
+.wheel-bottom-bar *::after {
+  text-decoration:none!important;
+  -webkit-text-decoration:none!important;
+  border-bottom:0!important;
+}
 .wheel-bottom-bar {
   position:relative; display:flex; width:100%; max-width:760px;
   align-items:center; justify-content:flex-start;
