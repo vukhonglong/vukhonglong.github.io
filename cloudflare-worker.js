@@ -29,12 +29,13 @@ let googleTokenCache = null;
 
 async function fetchWithTimeout(url, options = {}, stage = "kết nối Firebase") {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
+  const timeoutMs = 20000;
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     return await fetch(url, { ...options, signal: controller.signal });
   } catch (error) {
     if (error && error.name === "AbortError") {
-      throw new Error("Máy chủ quá thời gian tại bước: " + stage + " (8 giây).");
+      throw new Error("Máy chủ quá thời gian tại bước: " + stage + " (20 giây).");
     }
     throw new Error("Lỗi tại bước " + stage + ": " + (error.message || String(error)));
   } finally {
@@ -74,7 +75,7 @@ async function googleAccessToken(env) {
       grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
       assertion
     })
-  });
+  }, "lấy quyền truy cập Google");
   const data = await response.json();
   if (!response.ok || !data.access_token) {
     throw new Error("Không xác thực được tài khoản dịch vụ Firebase: " + (data.error_description || data.error || response.status));
@@ -90,7 +91,8 @@ async function verifyFirebaseUser(idToken) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ idToken })
-    }
+    },
+    "xác thực tài khoản Firebase"
   );
   const data = await response.json();
   if (!response.ok || !data.users || !data.users[0]) {
