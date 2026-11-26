@@ -9081,9 +9081,14 @@ window.loadTopupMilestones = async function() {
   list.innerHTML = '<div style="padding:14px;border-radius:13px;background:#fff4dc;color:#75400d;text-align:center">Đang kiểm tra giao dịch nạp...</div>';
   try {
     const db = firebase.firestore();
-    // Chỉ giao dịch admin cộng Xu mới mở mốc; không cần duyệt yêu cầu nạp.
+    // Chỉ tính giao dịch admin cộng Xu phát sinh từ 00:00 hôm nay (giờ thiết bị Việt Nam).
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayStartMs = todayStart.getTime();
     const adminAddsSnap = await db.collection("coinTransactions").where("uid", "==", user.uid).where("type", "==", "add").get();
     const adminAdds = adminAddsSnap.docs.map(doc => doc.data()).filter(t => {
+      const createdAtMs = t.createdAt && typeof t.createdAt.toDate === "function" ? t.createdAt.toDate().getTime() : 0;
+      if (createdAtMs < todayStartMs) return false;
       if (t.source === "admin_wallet_adjustment") return true;
       if (t.source) return false;
       const note = String(t.note || "").toLowerCase();
@@ -9143,14 +9148,20 @@ window.claimTopupMilestone = async function(amount, button) {
   }
   try {
     const db = firebase.firestore();
+    // Khi bấm nhận cũng kiểm tra lại: chỉ giao dịch admin cộng từ 00:00 hôm nay.
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayStartMs = todayStart.getTime();
     const adminAdds = await db.collection("coinTransactions").where("uid", "==", user.uid).where("type", "==", "add").get();
     const eligible = adminAdds.docs.some(doc => {
       const t = doc.data();
-      if (t.source === "admin_wallet_adjustment") return Number(t.amount || 0) >= milestone;
+      const createdAtMs = t.createdAt && typeof t.createdAt.toDate === "function" ? t.createdAt.toDate().getTime() : 0;
+      if (createdAtMs < todayStartMs || Number(t.amount || 0) < milestone) return false;
+      if (t.source === "admin_wallet_adjustment") return true;
       if (t.source) return false;
       const note = String(t.note || "").toLowerCase();
       const isSystemReward = note.includes("thưởng nạp x2") || note.includes("thưởng giới thiệu") || note.includes("referral");
-      return !isSystemReward && Number(t.amount || 0) >= milestone;
+      return !isSystemReward;
     });
     if (!eligible) throw new Error("Admin chưa có giao dịch cộng Xu riêng lẻ đủ mốc này.");
 
