@@ -43,6 +43,117 @@ function parsePrizes(raw) {
   return prizes;
 }
 
+
+const TOPUP_MILESTONES = [10000, 20000, 50000, 100000, 200000, 500000];
+
+async function getEligibleTopupMilestones(uid) {
+  const requestsSnap = await db.collection("topupRequests").where("uid", "==", uid).get();
+  const approvedAmounts = requestsSnap.docs
+    .filter(doc => doc.data().status === "reviewed")
+    .map(doc => Number(doc.data().amount || 0))
+    .filter(amount => Number.isSafeInteger(amount) && amount > 0);
+
+  return approvedAmounts;
+}
+
+exports.getTopupMilestoneStatus = onCall({ region: "asia-southeast1" }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Vui lòng đăng nhập để xem mốc thưởng.");
+
+  const uid = request.auth.uid;
+  const approvedAmounts = await getEligibleTopupMilestones(uid);
+  const claimsRef = db.collection("wallets").doc(uid).collection("topupMilestoneClaims");
+  const claimsSnap = await claimsRef.get();
+  const claimed = new Set(claimsSnap.docs.map(doc => Number(doc.id)));
+
+  return {
+    milestones: TOPUP_MILESTONES.map(amount => ({
+      amount,
+      bonus: amount,
+      unlocked: approvedAmounts.some(approvedAmount => approvedAmount >= amount),
+      claimed: claimed.has(amount)
+    }))
+  };
+});
+
+exports.claimTopupMilestone = onCall({ region: "asia-southeast1" }, async (request) => {
+  if (!request.auth) throw new HttpsError("unauthenticated", "Vui lòng đăng nhập để nhận thưởng.");
+
+  const uid = request.auth.uid;
+  const amount = Number(request.data && request.data.amount);
+  if (!TOPUP_MILESTONES.includes(amount)) {
+    throw new HttpsError("invalid-argument", "Mốc thưởng không hợp lệ.");
+  }
+
+  // Chỉ yêu cầu nạp đã được admin xác nhận mới đủ điều kiện mở khóa.
+  const approvedAmounts = await getEligibleTopupMilestones(uid);
+  if (!approvedAmounts.some(approvedAmount => approvedAmount >= amount)) {
+    throw new HttpsError("failed-precondition", "Bạn chưa có giao dịch nạp được xác nhận đủ mốc này.");
+  }
+
+  const walletRef = db.collection("wallets").doc(uid);
+  const claimRef = walletRef.collection("topupMilestoneClaims").doc(String(amount));
+  const historyRef = db.collection("coinTransactions").doc();
+
+  const result = await db.runTransaction(async tx => {
+    const [walletSnap, claimSnap] = await Promise.all([
+      tx.get(walletRef),
+      tx.get(claimRef)
+    ]);
+
+    if (!walletSnap.exists) {
+      throw new HttpsError("failed-precondition", "Không tìm thấy ví tài khoản.");
+    }
+    if (claimSnap.exists) {
+      throw new HttpsError("already-exists", "Bạn đã nhận mốc thưởng này rồi.");
+    }
+
+    const wallet = walletSnap.data();
+    const oldBalance = Number(wallet.coins || 0);
+    const newBalance = oldBalance + amount;
+    if (!Number.isSafeInteger(oldBalance) || !Number.isSafeInteger(newBalance)) {
+      throw new HttpsError("failed-precondition", "Số dư ví không hợp lệ.");
+    }
+
+    const rankNames = ["Đồng", "Bạc", "Vàng", "Bạch Kim", "Kim Cương", "Tinh Anh", "Thách Đấu"];
+    const rankNeeds = [20000, 70000, 200000, 500000, 700000, 3000000];
+    let rankIndex = Math.max(0, Number(wallet.rankIndex || 0));
+    let rankProgress = Math.max(0, Number(wallet.rankProgress || 0)) + amount;
+    while (rankIndex < rankNeeds.length && rankProgress >= rankNeeds[rankIndex]) {
+      rankProgress -= rankNeeds[rankIndex];
+      rankIndex++;
+    }
+
+    tx.update(walletRef, {
+      coins: newBalance,
+      rank: rankNames[Math.min(rankIndex, rankNames.length - 1)],
+      rankIndex,
+      rankProgress,
+      updatedAt: FieldValue.serverTimestamp()
+    });
+    tx.create(claimRef, {
+      uid,
+      milestone: amount,
+      bonus: amount,
+      claimedAt: FieldValue.serverTimestamp(),
+      source: "topupX2"
+    });
+    tx.create(historyRef, {
+      uid,
+      userId: String(wallet.userId || ""),
+      type: "add",
+      amount,
+      balanceAfter: newBalance,
+      note: "Thưởng nạp X2 mốc " + amount.toLocaleString("vi-VN") + " Xu",
+      source: "topupX2",
+      createdAt: FieldValue.serverTimestamp()
+    });
+
+    return { amount, bonus: amount, balance: newBalance };
+  });
+
+  return result;
+});
+
 exports.spinLuckyWheel = onCall({ region: "asia-southeast1" }, async (request) => {
   if (!request.auth) throw new HttpsError("unauthenticated", "Vui lòng đăng nhập để quay.");
   const uid = request.auth.uid;
