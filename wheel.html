@@ -68,7 +68,7 @@ canvas{width:100%;height:auto;display:block;border-radius:50%}
    waitingLastTime=0;
    function frame(now){
      if(!spinning)return;
-     if(waitingLastTime){const dt=Math.min((now-waitingLastTime)/1000,0.05);angle+=dt*Math.PI*2*1.35;const pegNow=Math.floor(angle/(Math.PI*2/24));while(lastPeg<pegNow){lastPeg++;pointerTick();}}
+     if(waitingLastTime){const dt=Math.min((now-waitingLastTime)/1000,0.05);angle+=dt*Math.PI*2*4.2;const pegNow=Math.floor(angle/(Math.PI*2/24));while(lastPeg<pegNow){lastPeg++;pointerTick();}}
      waitingLastTime=now;draw();waitingFrame=requestAnimationFrame(frame);
    }
    waitingFrame=requestAnimationFrame(frame);
