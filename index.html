@@ -9160,20 +9160,10 @@ window.claimTopupMilestone = async function(amount, button) {
       newBalance = oldBalance + milestone;
       if (!Number.isSafeInteger(newBalance)) throw new Error("Số dư ví không hợp lệ.");
 
-      const rankNames = ["Đồng", "Bạc", "Vàng", "Bạch Kim", "Kim Cương", "Tinh Anh", "Thách Đấu"];
-      const rankNeeds = [20000, 70000, 200000, 500000, 700000, 3000000];
-      let rankIndex = Number(wallet.rankIndex || 0);
-      let rankProgress = Number(wallet.rankProgress || 0) + milestone;
-      while (rankIndex < rankNeeds.length && rankProgress >= rankNeeds[rankIndex]) {
-        rankProgress -= rankNeeds[rankIndex];
-        rankIndex++;
-      }
-
+      // Thưởng X2 chỉ cộng số dư ví; KHÔNG cộng tiến độ/xếp hạng.
+      // Rank chỉ tăng từ giao dịch admin cộng Xu.
       transaction.update(walletRef, {
         coins: newBalance,
-        rank: rankNames[rankIndex],
-        rankIndex: rankIndex,
-        rankProgress: rankProgress,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       transaction.set(historyRef, {
