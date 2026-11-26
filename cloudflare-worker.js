@@ -25,27 +25,8 @@ function pemToArrayBuffer(pem) {
   return bytes.buffer;
 }
 
-let googleTokenCache = null;
-
-async function fetchWithTimeout(url, options = {}, stage = "kết nối Firebase") {
-  const controller = new AbortController();
-  const timeoutMs = 20000;
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, { ...options, signal: controller.signal });
-  } catch (error) {
-    if (error && error.name === "AbortError") {
-      throw new Error("Máy chủ quá thời gian tại bước: " + stage + " (20 giây).");
-    }
-    throw new Error("Lỗi tại bước " + stage + ": " + (error.message || String(error)));
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 async function googleAccessToken(env) {
   const now = Math.floor(Date.now() / 1000);
-  if (googleTokenCache && googleTokenCache.expiresAt > now + 60) return googleTokenCache.accessToken;
   const header = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const claims = b64url(JSON.stringify({
     iss: env.FIREBASE_CLIENT_EMAIL,
@@ -68,31 +49,29 @@ async function googleAccessToken(env) {
     new TextEncoder().encode(unsigned)
   );
   const assertion = unsigned + "." + b64url(signature);
-  const response = await fetchWithTimeout("https://oauth2.googleapis.com/token", {
+  const response = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
       assertion
     })
-  }, "lấy quyền truy cập Google");
+  });
   const data = await response.json();
   if (!response.ok || !data.access_token) {
     throw new Error("Không xác thực được tài khoản dịch vụ Firebase: " + (data.error_description || data.error || response.status));
   }
-  googleTokenCache = { accessToken: data.access_token, expiresAt: now + Number(data.expires_in || 3600) };
   return data.access_token;
 }
 
 async function verifyFirebaseUser(idToken) {
-  const response = await fetchWithTimeout(
+  const response = await fetch(
     "https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=" + FIREBASE_API_KEY,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ idToken })
-    },
-    "xác thực tài khoản Firebase"
+    }
   );
   const data = await response.json();
   if (!response.ok || !data.users || !data.users[0]) {
@@ -142,7 +121,7 @@ function parsePrizes(raw) {
 }
 
 async function firestoreRequest(url, token, options = {}) {
-  const response = await fetchWithTimeout(url, {
+  const response = await fetch(url, {
     ...options,
     headers: {
       "Authorization": "Bearer " + token,
@@ -188,47 +167,13 @@ export default {
       const documentRoot = "projects/" + env.FIREBASE_PROJECT_ID + "/databases/(default)/documents";
       const base = "https://firestore.googleapis.com/v1/" + documentRoot;
 
-
-      if (action === "history") {
-        const queryUrl = base + ":runQuery";
-        const queryResult = await firestoreRequest(queryUrl, token, {
-          method: "POST",
-          body: JSON.stringify({
-            structuredQuery: {
-              from: [{ collectionId: "luckyWheelSpins" }],
-              where: {
-                fieldFilter: {
-                  field: { fieldPath: "uid" },
-                  op: "EQUAL",
-                  value: { stringValue: user.uid }
-                }
-              },
-              limit: 100
-            }
-          })
-        });
-        const entries = (Array.isArray(queryResult) ? queryResult : [])
-          .filter(item => item.document && item.document.fields)
-          .map(item => {
-            const f = item.document.fields;
-            return {
-              prize: f.prize && f.prize.stringValue || "",
-              date: f.date && f.date.stringValue || "",
-              prizeIndex: Number(f.prizeIndex && (f.prizeIndex.integerValue ?? f.prizeIndex.doubleValue) || 0),
-              createdAt: f.createdAt && f.createdAt.timestampValue || ""
-            };
-          });
-        entries.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
-        return Response.json({ entries }, { status: 200, headers: cors });
-      }
-
             if (action === "status") {
         if (isAdmin) return Response.json({ isAdmin: true, dailyUsed: false, freeDailyEnabled: true, date }, { status: 200, headers: cors });
         const spinUrl = base + "/luckyWheelSpins/" + encodeURIComponent(user.uid + "_" + date);
         const settingsUrl = base + "/siteSettings/luckyWheel";
         const [spinResponse, settingsResponse] = await Promise.all([
-          fetchWithTimeout(spinUrl, { headers: { Authorization: "Bearer " + token } }, "đọc lịch sử lượt quay"),
-          fetchWithTimeout(settingsUrl, { headers: { Authorization: "Bearer " + token } }, "đọc cấu hình vòng quay")
+          fetch(spinUrl, { headers: { Authorization: "Bearer " + token } }),
+          fetch(settingsUrl, { headers: { Authorization: "Bearer " + token } })
         ]);
         if (!spinResponse.ok && spinResponse.status !== 404) throw new Error("Không kiểm tra được lượt quay hôm nay.");
         if (!settingsResponse.ok) throw new Error("Không tải được cấu hình vòng quay.");
@@ -253,20 +198,9 @@ export default {
       }
 
       const spinName = base + "/luckyWheelSpins/" + encodeURIComponent(spinId);
-      const existing = await fetchWithTimeout(spinName, { headers: { Authorization: "Bearer " + token } }, "kiểm tra lượt quay đã ghi");
+      const existing = await fetch(spinName, { headers: { Authorization: "Bearer " + token } });
       if (existing.ok) {
-        // Nếu lần gọi trước đã ghi nhận thưởng nhưng trình duyệt bị timeout,
-        // trả lại kết quả đã lưu thay vì báo lỗi hoặc cộng Xu lần thứ hai.
-        const saved = await existing.json();
-        const savedFields = saved.fields || {};
-        return Response.json({
-          prize: savedFields.prize && savedFields.prize.stringValue || "",
-          prizeIndex: Number(savedFields.prizeIndex && (savedFields.prizeIndex.integerValue ?? savedFields.prizeIndex.doubleValue) || 0),
-          coinsAwarded: Number(savedFields.coinsAwarded && (savedFields.coinsAwarded.integerValue ?? savedFields.coinsAwarded.doubleValue) || 0),
-          balance: Number(savedFields.balanceAfter && (savedFields.balanceAfter.integerValue ?? savedFields.balanceAfter.doubleValue) || 0),
-          date: savedFields.date && savedFields.date.stringValue || date,
-          recovered: true
-        }, { status: 200, headers: cors });
+        return Response.json({ error: isAdmin ? "Lượt quay này đã được xử lý." : "Bạn đã quay hôm nay rồi." }, { status: 409, headers: cors });
       }
       if (existing.status !== 404) {
         const errText = await existing.text();
