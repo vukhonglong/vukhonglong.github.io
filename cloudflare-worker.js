@@ -27,13 +27,10 @@ function pemToArrayBuffer(pem) {
 
 let cachedGoogleToken = "";
 let cachedGoogleTokenExpiresAt = 0;
-let googleTokenRequest = null;
 
 async function googleAccessToken(env) {
   const now = Math.floor(Date.now() / 1000);
   if (cachedGoogleToken && cachedGoogleTokenExpiresAt > now + 120) return cachedGoogleToken;
-  if (googleTokenRequest) return googleTokenRequest;
-  googleTokenRequest = (async () => {
   const header = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const claims = b64url(JSON.stringify({
     iss: env.FIREBASE_CLIENT_EMAIL,
@@ -71,9 +68,6 @@ async function googleAccessToken(env) {
   cachedGoogleToken = data.access_token;
   cachedGoogleTokenExpiresAt = now + Number(data.expires_in || 3600);
   return cachedGoogleToken;
-  })();
-  try { return await googleTokenRequest; }
-  finally { googleTokenRequest = null; }
 }
 
 async function verifyFirebaseUser(idToken) {
