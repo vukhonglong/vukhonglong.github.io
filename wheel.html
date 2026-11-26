@@ -111,7 +111,8 @@ canvas{width:100%;height:auto;display:block;border-radius:50%}
   // Yêu cầu vẫn được giữ để nhận kết quả thật từ máy chủ, không tự tạo phần thưởng.
   pendingStopTimer=setTimeout(()=>{
    brakePendingSpin();
-   $("hint").textContent="Vòng quay đang giảm tốc, chờ máy chủ xác nhận kết quả...";
+   $("spinState").textContent="● Đang chờ kết quả";
+   $("hint").textContent="Vòng quay đã tạm dừng. Máy chủ vẫn đang xác nhận phần thưởng; ô dưới kim chưa phải kết quả chính thức.";
   },10000);
   try{
    const requestId="wheel_"+Date.now()+"_"+Math.random().toString(36).slice(2,12);
