@@ -3015,6 +3015,38 @@ if (transferUser) {
   if(window.loadCustomerOrderHistory) window.loadCustomerOrderHistory();
  }
 
+ if(type === "topup-x2"){
+  body.innerHTML = `
+   <div style="max-width:560px;margin:0 auto;padding-bottom:24px">
+    <div style="position:relative;overflow:hidden;padding:22px 18px;border-radius:22px;background:radial-gradient(circle at 90% 0%,#ffdc7b88,transparent 38%),linear-gradient(125deg,#54230c,#a94b12 58%,#e28a22);color:#fff;box-shadow:0 10px 26px #a94b1233;text-align:center">
+     <div style="font-size:45px">🎁</div>
+     <div style="font-size:11px;font-weight:900;letter-spacing:1.5px;color:#ffe6ad">ƯU ĐÃI ĐẶC BIỆT</div>
+     <h2 style="font-size:27px;margin:7px 0;font-weight:1000">NẠP THƯỞNG X2</h2>
+     <p style="font-size:13px;line-height:1.55;color:#fff0d2;margin:0">Đạt mốc nạp nào, nhận thưởng của tất cả mốc từ thấp đến mốc đó.</p>
+     <div style="display:inline-block;margin-top:14px;padding:8px 15px;border-radius:30px;background:#fff4d8;color:#9a410d;font-size:12px;font-weight:950">TỔNG THƯỞNG TỐI ĐA: +880.000 XU</div>
+    </div>
+    <div style="margin:17px 0 10px;font-weight:950;font-size:17px">🏆 CÁC MỐC NẠP VÀ THƯỞNG</div>
+    <div style="display:grid;grid-template-columns:1fr;gap:9px">
+     <div style="display:flex;justify-content:space-between;gap:10px;padding:13px 14px;border:1px solid #f2c77d;border-radius:14px;background:#fff;color:#54230c"><b>10.000 Xu</b><b style="color:#d05a12">+10.000 Xu</b></div>
+     <div style="display:flex;justify-content:space-between;gap:10px;padding:13px 14px;border:1px solid #f2c77d;border-radius:14px;background:#fff;color:#54230c"><b>20.000 Xu</b><b style="color:#d05a12">+20.000 Xu</b></div>
+     <div style="display:flex;justify-content:space-between;gap:10px;padding:13px 14px;border:1px solid #f2c77d;border-radius:14px;background:#fff;color:#54230c"><b>50.000 Xu</b><b style="color:#d05a12">+50.000 Xu</b></div>
+     <div style="display:flex;justify-content:space-between;gap:10px;padding:13px 14px;border:1px solid #f2c77d;border-radius:14px;background:#fff;color:#54230c"><b>100.000 Xu</b><b style="color:#d05a12">+100.000 Xu</b></div>
+     <div style="display:flex;justify-content:space-between;gap:10px;padding:13px 14px;border:1px solid #f2c77d;border-radius:14px;background:#fff;color:#54230c"><b>200.000 Xu</b><b style="color:#d05a12">+200.000 Xu</b></div>
+     <div style="display:flex;justify-content:space-between;gap:10px;padding:13px 14px;border:1px solid #f2c77d;border-radius:14px;background:linear-gradient(100deg,#fff0c2,#ffe0a1);color:#54230c"><b>500.000 Xu</b><b style="color:#d05a12">+500.000 Xu</b></div>
+    </div>
+    <div style="margin-top:13px;padding:14px;border-radius:14px;background:#fff4dc;border:1px solid #f2d39a;color:#75400d;font-size:12px;line-height:1.65">
+     <b>📌 CÁCH TÍNH THƯỞNG</b><br>
+     • Ví dụ nạp 50.000 Xu: nhận thưởng 10.000 + 20.000 + 50.000 = <b>80.000 Xu</b>.<br>
+     • Mỗi tài khoản chỉ nhận mỗi mốc 1 lần duy nhất.<br>
+     • Nếu đã nhận mốc thấp, lần sau đạt mốc cao hơn chỉ nhận các mốc chưa nhận.<br>
+     • Mỗi lần nạp tối đa được xét đến mốc 500.000 Xu.
+    </div>
+    <button type="button" onclick='openModal("transfer")' style="width:100%;margin-top:16px;padding:15px;border:0;border-radius:14px;background:linear-gradient(100deg,#e17b17,#f4a72e);color:#fff;font-size:15px;font-weight:950;box-shadow:0 7px 17px #b45a1840">NẠP NGAY ➜</button>
+    <button type="button" onclick='openModal("events")' style="width:100%;margin-top:9px;padding:12px;border:1px solid #d5a75d;border-radius:13px;background:transparent;color:inherit;font-weight:850">← QUAY LẠI SỰ KIỆN</button>
+   </div>
+  `;
+ }
+
  if(type === "events"){
   body.innerHTML = `
    <div style="max-width:560px;margin:0 auto;padding-bottom:8px">
@@ -3034,16 +3066,16 @@ if (transferUser) {
        <span style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:6px 11px;border-radius:20px;background:#fff;color:#5130b8;font-size:10px;font-weight:950">THAM GIA NGAY <span aria-hidden="true">➜</span></span>
       </span>
      </a>
-     <div style="position:relative;isolation:isolate;overflow:hidden;min-height:132px;display:flex;align-items:center;gap:16px;padding:18px;border:1px solid #ffd18a;border-radius:21px;background:radial-gradient(circle at 92% 10%,#fbbf2488 0,transparent 35%),linear-gradient(115deg,#54230c,#a94b12 58%,#e28a22);color:#fff;box-shadow:0 9px 22px #b45a1833">
+     <a href="#" onclick='event.preventDefault();openModal("topup-x2")' aria-label="Xem chương trình nạp thưởng x2" style="position:relative;isolation:isolate;overflow:hidden;min-height:132px;display:flex;align-items:center;gap:16px;padding:18px;border:1px solid #ffd18a;border-radius:21px;background:radial-gradient(circle at 92% 10%,#fbbf2488 0,transparent 35%),linear-gradient(115deg,#54230c,#a94b12 58%,#e28a22);color:#fff;text-decoration:none!important;cursor:pointer;box-shadow:0 9px 22px #b45a1833">
       <span aria-hidden="true" style="position:absolute;z-index:-1;right:-14px;bottom:-44px;font-size:145px;opacity:.12;transform:rotate(12deg)">🎁</span>
       <span style="width:72px;height:72px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:21px;background:linear-gradient(145deg,#ffd166,#f28b19);border:1px solid #fff5cf;box-shadow:0 7px 18px #54200666;font-size:42px">🎁</span>
       <span style="min-width:0;display:block;flex:1">
        <span style="display:inline-block;padding:4px 9px;margin-bottom:7px;border-radius:20px;background:#ffffff22;border:1px solid #ffffff55;color:#fff0cb;font-size:9px;font-weight:900;letter-spacing:1px">EVENT 02 · ƯU ĐÃI</span>
        <b style="display:block;font-size:17px;line-height:1.25;font-weight:950;letter-spacing:.25px;color:#fff">NẠP THƯỞNG X2</b>
        <small style="display:block;margin-top:6px;color:#ffedcf;font-size:12px;line-height:1.4">Nạp nhận thêm thưởng · Nhân đôi ưu đãi</small>
-       <span style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:6px 11px;border-radius:20px;background:#fff4d8;color:#9a410d;font-size:10px;font-weight:950">SẮP RA MẮT <span aria-hidden="true">✦</span></span>
+       <span style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:6px 11px;border-radius:20px;background:#fff4d8;color:#9a410d;font-size:10px;font-weight:950">XEM MỐC THƯỞNG <span aria-hidden="true">➜</span></span>
       </span>
-     </div>
+     </a>
     </div>
    </div>
   `;
@@ -3132,7 +3164,8 @@ if(
  type === "history" ||
  type === "mailbox" ||
  type === "progress" ||
- type === "events"
+ type === "events" ||
+ type === "topup-x2"
 ){
  modal.classList.add("page-mode");
  document.getElementById("homeWheelBanner")?.classList.add("other-main-tab");
