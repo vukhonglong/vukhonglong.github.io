@@ -186,33 +186,20 @@ export default {
       }
 
             if (action === "history") {
-        const historyResponse = await firestoreRequest(base + ":runQuery", token, {
-          method: "POST",
-          body: JSON.stringify({
-            structuredQuery: {
-              from: [{ collectionId: "luckyWheelSpins" }],
-              where: {
-                fieldFilter: {
-                  field: { fieldPath: "uid" },
-                  op: "EQUAL",
-                  value: { stringValue: user.uid }
-                }
-              },
-              limit: 100
-            }
-          })
-        });
-        const entries = (Array.isArray(historyResponse) ? historyResponse : [])
-          .filter(item => item.document && item.document.fields)
-          .map(item => {
-            const fields = item.document.fields;
+        const historyResponse = await firestoreRequest(base + "/luckyWheelSpins?pageSize=1000", token);
+        const documents = Array.isArray(historyResponse.documents) ? historyResponse.documents : [];
+        const entries = documents
+          .filter(document => document.fields && document.fields.uid && document.fields.uid.stringValue === user.uid)
+          .map(document => {
+            const fields = document.fields;
             return {
               prize: fields.prize?.stringValue || "—",
               date: fields.date?.stringValue || "",
               createdAt: fields.createdAt?.timestampValue || ""
             };
-          });
-        return Response.json({ entries }, { status: 200, headers: cors });
+          })
+          .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+        return Response.json({ entries: entries.slice(0, 100) }, { status: 200, headers: cors });
       }
 
       if (action === "status") {
