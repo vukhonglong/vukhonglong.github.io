@@ -5068,6 +5068,7 @@ const rankName = rankNames[rankIndex];
         amount: amount,
         balanceAfter: newBalance,
         note: note,
+        source: type === "add" ? "admin_wallet_adjustment" : "admin_wallet_adjustment",
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
     });
@@ -9080,9 +9081,14 @@ window.loadTopupMilestones = async function() {
   list.innerHTML = '<div style="padding:14px;border-radius:13px;background:#fff4dc;color:#75400d;text-align:center">Đang kiểm tra giao dịch nạp...</div>';
   try {
     const db = firebase.firestore();
-    const snap = await db.collection("topupRequests").where("uid", "==", user.uid).get();
-    const requests = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const deposits = requests.filter(r => r.status === "reviewed" && r.requestType !== "bonus_claim");
+    // Chỉ giao dịch admin cộng Xu mới mở mốc; không cần duyệt yêu cầu nạp.
+    const adminAddsSnap = await db.collection("coinTransactions").where("uid", "==", user.uid).where("type", "==", "add").get();
+    const adminAdds = adminAddsSnap.docs.map(doc => doc.data()).filter(t => {
+      if (t.source === "admin_wallet_adjustment") return true;
+      if (t.source) return false;
+      const note = String(t.note || "").toLowerCase();
+      return !note.includes("thưởng nạp x2") && !note.includes("thưởng giới thiệu") && !note.includes("referral");
+    });
     const milestones = [10000, 20000, 50000, 100000, 200000, 500000];
     const claimsSnap = await db.collection("coinTransactions").where("uid", "==", user.uid).get();
     const claimedIds = new Set(claimsSnap.docs.map(doc => doc.id));
@@ -9091,7 +9097,7 @@ window.loadTopupMilestones = async function() {
     list.innerHTML = "";
     milestones.forEach(amount => {
       const claimed = claimedIds.has("topup_x2_" + user.uid + "_" + amount);
-      const unlocked = deposits.some(r => Number(r.amount || 0) >= amount);
+      const unlocked = adminAdds.some(t => Number(t.amount || 0) >= amount);
       const card = document.createElement("div");
       card.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 14px;border:1px solid " + (claimed ? "#86c9a6" : unlocked ? "#e8b85e" : "#d7dbe3") + ";border-radius:14px;background:" + (claimed ? "#e8f8ef" : unlocked ? "linear-gradient(100deg,#fff0c2,#ffe0a1)" : "#f1f3f7") + ";color:#54230c";
       const info = document.createElement("div");
@@ -9104,7 +9110,7 @@ window.loadTopupMilestones = async function() {
       bonus.textContent = "Thưởng thêm +" + money(amount) + " Xu";
       const state = document.createElement("small");
       state.style.cssText = "display:block;margin-top:4px;font-size:11px;color:" + (claimed ? "#16834c" : unlocked ? "#9a5a12" : "#667085");
-      state.textContent = claimed ? "✓ Đã nhận thưởng mốc này" : unlocked ? "✓ Đã xác nhận đủ điều kiện" : "🔒 Chờ nạp và admin xác nhận";
+      state.textContent = claimed ? "✓ Đã nhận thưởng mốc này" : unlocked ? "✓ Admin đã cộng đủ Xu — có thể nhận ngay" : "🔒 Chờ admin cộng đủ Xu vào ví";
       info.append(title, bonus, state);
 
       const button = document.createElement("button");
@@ -9137,12 +9143,16 @@ window.claimTopupMilestone = async function(amount, button) {
   }
   try {
     const db = firebase.firestore();
-    const requests = await db.collection("topupRequests").where("uid", "==", user.uid).get();
-    const eligible = requests.docs.some(doc => {
-      const r = doc.data();
-      return r.status === "reviewed" && r.requestType !== "bonus_claim" && Number(r.amount || 0) >= milestone;
+    const adminAdds = await db.collection("coinTransactions").where("uid", "==", user.uid).where("type", "==", "add").get();
+    const eligible = adminAdds.docs.some(doc => {
+      const t = doc.data();
+      if (t.source === "admin_wallet_adjustment") return Number(t.amount || 0) >= milestone;
+      if (t.source) return false;
+      const note = String(t.note || "").toLowerCase();
+      const isSystemReward = note.includes("thưởng nạp x2") || note.includes("thưởng giới thiệu") || note.includes("referral");
+      return !isSystemReward && Number(t.amount || 0) >= milestone;
     });
-    if (!eligible) throw new Error("Chưa có giao dịch nạp được admin xác nhận đủ mốc.");
+    if (!eligible) throw new Error("Admin chưa có giao dịch cộng Xu riêng lẻ đủ mốc này.");
 
     const walletRef = db.collection("wallets").doc(user.uid);
     const historyRef = db.collection("coinTransactions").doc("topup_x2_" + user.uid + "_" + milestone);
