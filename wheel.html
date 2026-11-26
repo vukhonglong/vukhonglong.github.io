@@ -90,7 +90,7 @@ canvas{width:100%;height:auto;display:block;border-radius:50%}
  }
  $("spinBtn").addEventListener("click",async()=>{
    if(!user||spinning||statusLoadFailed||(!isAdmin()&&hasSpun))return;
-   spinning=true;$("spinBtn").disabled=true;$("spinState").textContent="● Đang kết nối máy chủ...";$("hint").textContent="Vòng quay đang chạy, vui lòng chờ máy chủ xác nhận kết quả...";
+   spinning=true;$("spinBtn").disabled=true;$("hint").textContent="Vòng quay đang chạy, vui lòng chờ máy chủ xác nhận kết quả...";
    startWaitingSpin();
    try{
      const requestId="wheel_"+Date.now()+"_"+Math.random().toString(36).slice(2,12);
@@ -98,7 +98,7 @@ canvas{width:100%;height:auto;display:block;border-radius:50%}
      stopWaitingSpin();
      if(Array.isArray(data.prizes)&&data.prizes.length>=2&&data.prizes.length<=12){prizes=data.prizes.map(p=>({label:toXu(p.label),weight:Number(p.weight)}));draw();$("prizeInput").value=prizes.map(p=>p.label+" | "+p.weight).join("\n");}
      if(!Number.isInteger(data.prizeIndex)||data.prizeIndex<0||data.prizeIndex>=prizes.length||normalizePrizeLabel(prizes[data.prizeIndex].label)!==normalizePrizeLabel(data.prize))throw new Error("Máy chủ trả về phần thưởng không nằm trong danh sách đồng bộ. Lượt quay đã được ghi; vui lòng không quay lại.");
-     $("spinState").textContent="● Đã nhận kết quả — đang dừng vòng quay...";
+     
      animateToPrize(data,data.prizeIndex);
    }catch(e){
      stopWaitingSpin();spinning=false;$("spinBtn").disabled=!isAdmin()&&hasSpun;$("spinState").textContent="● Lỗi";$("hint").textContent="Không thể hoàn tất lượt quay.";alert("Không thể quay thưởng: "+(e&&e.message?e.message:String(e)));
