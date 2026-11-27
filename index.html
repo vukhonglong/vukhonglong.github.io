@@ -8360,27 +8360,17 @@ window.vklSupportSend = async function() {
     const reply = document.createElement("div");
     reply.className = "vkl-chat-bot";
     const normalizedValue = value.toLocaleLowerCase("vi");
-    const isTopupProblem = normalizedValue.includes("chưa được cộng xu");
+    const sentTopic = String(activeSession?.topic || window.vklPendingSupportTopic || "").toLocaleLowerCase("vi");
+    const isTopupProblem = normalizedValue.includes("chưa được cộng xu") || sentTopic === "nạp tiền";
     const isWrongTransferNote = normalizedValue.includes("chuyển khoản sai nội dung") || normalizedValue.includes("chuyển khoản sai");
     const isSlowOrder = normalizedValue.includes("đơn của mình đã đặt lâu") || normalizedValue.includes("đơn chạy chậm");
     const isOrderCodeError = normalizedValue.includes("đơn hàng của mình bị lỗi / sai mã") || normalizedValue.includes("đơn bị lỗi / sai mã");
     const isCancelOrder = normalizedValue.includes("mình muốn huỷ đơn") || normalizedValue.includes("muốn huỷ đơn");
-    const isCloneAccountError = normalizedValue.includes("acc clone") || normalizedValue.includes("tài khoản vừa nhận");
+    const isCloneAccountError = sentTopic === "acc clone lỗi" || normalizedValue.includes("acc clone") || normalizedValue.includes("tài khoản vừa nhận");
     const currentUser = window.auth?.currentUser;
-    let accountName = currentUser?.email ? currentUser.email.split("@")[0] : "bạn";
-    let accountId = "chưa có ID";
-    if (currentUser) {
-      try {
-        const walletSnap = await firebase.firestore().collection("wallets").doc(currentUser.uid).get();
-        if (walletSnap.exists) {
-          const walletData = walletSnap.data();
-          accountName = String(walletData.displayName || accountName);
-          if (walletData.userId) accountId = String(walletData.userId);
-        }
-      } catch (error) {
-        console.error("Không tải được tên hiển thị/ID tài khoản hỗ trợ:", error);
-      }
-    }
+    // Không chờ truy vấn Firestore ở bước trả lời tự động để tránh bot bị treo nếu mạng chậm.
+    const accountName = currentUser?.email ? currentUser.email.split("@")[0] : "bạn";
+    const accountId = "chưa có ID";
     if (isTopupProblem) {
       reply.textContent = "TIN NHẮN TỰ ĐỘNG\n\nChào " + accountName + "! Nạp Xu tự động thường được cộng sau khoảng 2–5 phút.\n\n1) Kiểm tra nội dung chuyển khoản đúng dạng:\nTên chuyentien " + accountId + "\n\n2) Số tiền tối thiểu mỗi lần nạp là 2.000 Xu.\n\nNếu đã quá 30 phút mà vẫn chưa nhận được Xu, vui lòng gửi ảnh biên lai và mã giao dịch để Admin kiểm tra, duyệt thủ công.";
     } else if (isWrongTransferNote) {
@@ -8392,7 +8382,7 @@ window.vklSupportSend = async function() {
     } else if (isCancelOrder) {
       reply.textContent = "TIN NHẮN TỰ ĐỘNG\n\nChào " + accountName + ", phải có lý do thật chính đáng trước khi huỷ nhé.\n\nMình đã ghi nhận nội dung và sẽ duyệt trong 2–5 phút trước khi đơn chạy.";
     } else if (isCloneAccountError) {
-      reply.textContent = "TIN NHẮN TỰ ĐỘNG\n\nChào " + accountName + ", thường thì acc clone không thể chính xác 100%, chắc chắn sẽ có lỗi khoảng 5%.\n\nNếu gặp lỗi như bị ban hoặc sai tài khoản/mật khẩu thì báo mình, mình sẽ đổi acc khác nhé!";
+      reply.textContent = "TIN NHẮN TỰ ĐỘNG\n\nChào " + accountName + ", thường thì acc clone không 100% là chính xác, chắc chắn sẽ có lỗi khoảng 5%.\n\nNếu gặp lỗi như bị ban hay sai tài khoản/mật khẩu thì báo mình, mình sẽ đổi acc khác nhé!";
     } else {
       reply.textContent = "Mình đã ghi nhận nội dung. Nếu cần xử lý tài khoản hoặc đơn hàng, bạn vui lòng để lại mã liên quan; admin sẽ phản hồi khi có mặt.";
     }
