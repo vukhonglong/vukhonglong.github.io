@@ -2034,7 +2034,24 @@ async function submitConfirmedOrder(){
 
  document.getElementById("confirmOrderModal").style.display = "none";
 
- // GỬI EMAIL THÔNG BÁO ĐƠN HÀNG
+ // ACC CLONE: không gửi email thông báo, chỉ hiển thị kết quả trên website.
+  if (isCloneOrder) {
+   alert("TẠO ĐƠN THÀNH CÔNG!\\n\\n" +
+    "Mã đơn: " + order.id +
+    "\\n================================\\n" +
+    "Dịch vụ: " + order.service +
+    "\\nSố lượng tài khoản: " + order.count +
+    "\\nTrạng thái: Đã giao tài khoản" +
+    "\\n===================\\n" +
+    "Tổng tiền: " + orderPriceText(order.total) +
+    "\\nTài khoản đã được giao trong mục Lịch sử.");
+   document.getElementById("codes").value = "";
+   document.getElementById("cloneQuantity").value = "1";
+   update();
+   return;
+  }
+
+  // GỬI EMAIL THÔNG BÁO ĐƠN HÀNG
  // Email được gửi sau khi Firestore đã lưu đơn và trừ Xu thành công.
  // Không gửi mật khẩu/tài khoản được giao qua email.
  try {
