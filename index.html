@@ -1634,7 +1634,7 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
     <div class="service-info">
      <b>ACC CLONE LV0</b>
      <small>Tài khoản clone cấp 0</small>
-     <div class="price">50đ</div>
+     <div class="price">Miễn phí</div>
      <span class="badge">❤️</span>
     </div>
    </button>
@@ -1644,7 +1644,7 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
     <div class="service-info">
      <b>ACC CLONE LV12</b>
      <small>Tài khoản clone cấp 12</small>
-     <div class="price">1.500đ</div>
+     <div class="price">Miễn phí</div>
      <span class="badge">❤️</span>
     </div>
    </button>
@@ -1848,14 +1848,14 @@ const PACKAGES = {
 
  cloneLv0: {
   name: "ACC CLONE LV0",
-  price: 50,
+  price: 0,
   quantity: 1,
   label: "Tổng số acc clone"
  },
 
  cloneLv12: {
   name: "ACC CLONE LV12",
-  price: 1500,
+  price: 0,
   quantity: 1,
   label: "Tổng số acc clone"
  }
@@ -1865,6 +1865,9 @@ let selected = "";
 
 function money(n){
  return new Intl.NumberFormat("vi-VN").format(n) + " Xu";
+}
+function orderPriceText(n){
+ return Number(n) === 0 ? "Miễn phí" : money(n);
 }
 
 function numberFormat(n){
@@ -1882,7 +1885,7 @@ function choose(type){
  document.getElementById("codeInputSection").style.display = cloneMode ? "none" : "block";
  document.getElementById("cloneQuantitySection").style.display = cloneMode ? "block" : "none";
  document.getElementById("selectedText").textContent =
-  "Đã chọn: " + pack.name + " - " + money(pack.price) + (cloneMode ? "/1" : "/gói");
+  "Đã chọn: " + pack.name + " - " + orderPriceText(pack.price) + (cloneMode ? "/1" : "/gói");
  document.getElementById("quantityLabel").textContent = "Trạng Thái";
  update();
 }
@@ -1924,7 +1927,7 @@ function update(){
  document.getElementById("quantityLabel").textContent = "Trạng Thái";
  // Trạng thái Hoạt động/Hết do renderServiceStatus quản lý riêng.
  // Không ghi đè trạng thái đã lưu khi người dùng nhập mã hoặc cập nhật số lượng.
- document.getElementById("total").textContent = money(total);
+ document.getElementById("total").textContent = orderPriceText(total);
  if(typeof window.renderServiceStatus === "function"){
   window.renderServiceStatus();
  }
@@ -1975,7 +1978,7 @@ function createOrder(){
   '<b>Dịch vụ:</b> ' + pendingOrder.service + '<br><br>' +
   '<b>' + (cloneMode ? "Số lượng tài khoản:" : "Số dòng mã:") + '</b> ' + pendingOrder.count + '<br><br>' +
   '<b>' + pendingOrder.label + ':</b> ' + numberFormat(pendingOrder.quantity) + '<br><br>' +
-  '<b>Tổng tiền:</b> ' + money(pendingOrder.total) +
+  '<b>Tổng tiền:</b> ' + orderPriceText(pendingOrder.total) +
   (cloneMode ? "" : '<br><br><b>Danh sách mã:</b><br>' +
    pendingOrder.codes.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>")) +
   '</div>';
@@ -1995,11 +1998,20 @@ async function submitConfirmedOrder(){
  if(!pendingOrder) return;
 
  const order = pendingOrder;
+ const isCloneOrder = order.service === "ACC CLONE LV0" || order.service === "ACC CLONE LV12";
 
  try {
- // LV0 và LV12 đều lưu đơn + trừ Xu trực tiếp qua Firestore.
- // saveOrderToFirebase đã đặt trạng thái "Chờ giao tài khoản" cho cả hai loại.
- await window.saveOrderToFirebase(order);
+   if (isCloneOrder) {
+     const deliverClone = firebase.app().functions("asia-southeast1").httpsCallable("deliverCloneAccounts");
+     await deliverClone({
+       orderId: order.id,
+       service: order.service,
+       count: order.count,
+       date: order.date
+     });
+   } else {
+     await window.saveOrderToFirebase(order);
+   }
  } catch(error) {
   console.error("Lỗi xử lý đơn hàng:", error);
   alert(error.message || "Không thể xử lý đơn hàng. Vui lòng thử lại hoặc liên hệ hỗ trợ.");
@@ -2032,7 +2044,7 @@ async function submitConfirmedOrder(){
     date: order.date,
     buyer_name: buyer && buyer.email ? buyer.email.split("@")[0] : "Không xác định",
     buyer_email: buyer && buyer.email ? buyer.email : "Không xác định",
-    delivery_status: isCloneOrder ? "Chờ giao tài khoản" : "Đã tiếp nhận",
+    delivery_status: isCloneOrder ? "Đã giao tài khoản" : "Đã tiếp nhận",
     order_type: isCloneOrder ? "ĐƠN ACC CLONE" : "ĐƠN DỊCH VỤ"
    },
    {
@@ -2046,9 +2058,10 @@ async function submitConfirmedOrder(){
      "\n================================\n" +
      "Dịch vụ: " + order.service +
      "\nSố lượng tài khoản: " + order.count +
-     "\nTrạng thái: Chờ giao tài khoản" +
+     "\nTrạng thái: Đã giao tài khoản" +
      "\n===================\n" +
-     "Tổng tiền: " + money(order.total)
+     "Tổng tiền: Miễn phí" +
+     "\nTài khoản đã được giao trong mục Lịch sử."
    : "TẠO ĐƠN THÀNH CÔNG!\n\n" +
      "Mã đơn: " + order.id + "\n" +
      "Dịch vụ: " + order.service + "\n" +
@@ -2076,9 +2089,10 @@ async function submitConfirmedOrder(){
      "\n================================\n" +
      "Dịch vụ: " + order.service +
      "\nSố lượng tài khoản: " + order.count +
-     "\nTrạng thái: Chờ giao tài khoản" +
+     "\nTrạng thái: Đã giao tài khoản" +
      "\n===================\n" +
-     "Tổng tiền: " + money(order.total) +
+     "Tổng tiền: Miễn phí" +
+     "\nTài khoản đã được giao trong mục Lịch sử." +
      "\nEmail chưa gửi được" + emailStatus + ": " + emailError
    : "ĐƠN HÀNG ĐÃ ĐƯỢC LƯU THÀNH CÔNG!\n\n" +
      "Mã đơn: " + order.id +
