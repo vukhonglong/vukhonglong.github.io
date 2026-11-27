@@ -270,6 +270,41 @@ export default {
         if (!transaction) throw new Error("Không khởi tạo được giao dịch kho.");
 
         try {
+          const walletName = documentRoot + "/wallets/" + encodeURIComponent(user.uid);
+          const walletResults = await firestoreRequest(base + ":batchGet", token, {
+            method: "POST",
+            body: JSON.stringify({ documents: [walletName], transaction })
+          });
+          const walletResult = Array.isArray(walletResults)
+            ? walletResults.find(item => item.found && item.found.name === walletName)
+            : null;
+          const walletDoc = walletResult && walletResult.found;
+          if (!walletDoc) throw new Error("Không tìm thấy ví Xu của bạn.");
+          const walletFields = walletDoc.fields || {};
+          const oldBalance = Number(
+            walletFields.coins?.integerValue ??
+            walletFields.coins?.doubleValue ??
+            0
+          );
+          if (!Number.isSafeInteger(oldBalance) || oldBalance < 0) {
+            throw new Error("Số dư ví hiện tại không hợp lệ.");
+          }
+          const unitPrice = service === "ACC CLONE LV0" ? 50 : 1500;
+          const totalPrice = unitPrice * count;
+          if (!Number.isSafeInteger(totalPrice)) throw new Error("Tổng tiền đơn hàng không hợp lệ.");
+          if (oldBalance < totalPrice) {
+            await fetch(base + ":rollback", {
+              method: "POST",
+              headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+              body: JSON.stringify({ transaction })
+            });
+            return Response.json({
+              error: "Số dư không đủ! Bạn cần " + totalPrice.toLocaleString("vi-VN") +
+                " Xu, hiện có " + oldBalance.toLocaleString("vi-VN") + " Xu."
+            }, { status: 409, headers: cors });
+          }
+          const newBalance = oldBalance - totalPrice;
+
           const queryResult = await firestoreRequest(base + ":runQuery", token, {
             method: "POST",
             body: JSON.stringify({
@@ -314,6 +349,32 @@ export default {
           const stringField = value => ({ stringValue: String(value) });
           const intField = value => ({ integerValue: String(value) });
           const writes = stockDocs.map(doc => ({ delete: doc.name }));
+          writes.push({
+            update: {
+              name: walletName,
+              fields: {
+                coins: intField(newBalance),
+                lastOrderId: stringField(orderId),
+                updatedAt: { timestampValue: timestamp }
+              }
+            },
+            updateMask: { fieldPaths: ["coins", "lastOrderId", "updatedAt"] }
+          });
+          writes.push({
+            update: {
+              name: documentRoot + "/coinTransactions/" + orderId,
+              fields: {
+                uid: stringField(user.uid),
+                userId: stringField(user.uid),
+                type: stringField("subtract"),
+                amount: intField(totalPrice),
+                balanceAfter: intField(newBalance),
+                note: stringField("Thanh toán đơn hàng " + orderId),
+                createdAt: { timestampValue: timestamp }
+              }
+            },
+            currentDocument: { exists: false }
+          });
 
           for (let offset = 0, index = 0; offset < accounts.length; offset += 20, index++) {
             const chunk = accounts.slice(offset, offset + 20);
@@ -346,7 +407,7 @@ export default {
                 service: stringField(service),
                 count: intField(count),
                 quantity: intField(count),
-                total: intField(0),
+                total: intField(totalPrice),
                 codes: stringField(""),
                 date: stringField(dateText),
                 label: stringField("Số lượng tài khoản"),
