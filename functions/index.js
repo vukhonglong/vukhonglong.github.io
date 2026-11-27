@@ -237,3 +237,104 @@ exports.getLuckyWheelStatus = onCall({ region: "asia-southeast1" }, async (reque
     freeDailyEnabled: !(settingsSnap.exists && settingsSnap.data().freeDailyEnabled === false)
   };
 });
+
+
+exports.deliverCloneAccounts = onCall({ region: "asia-southeast1" }, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Vui lòng đăng nhập trước khi nhận tài khoản.");
+  }
+
+  const service = String(request.data && request.data.service || "");
+  const level = service === "ACC CLONE LV0" ? "LV0" :
+    service === "ACC CLONE LV12" ? "LV12" : "";
+  const count = Number(request.data && request.data.count);
+  const orderId = String(request.data && request.data.orderId || "");
+  const date = String(request.data && request.data.date || "");
+
+  if (!level) throw new HttpsError("invalid-argument", "Loại tài khoản không hợp lệ.");
+  if (!Number.isSafeInteger(count) || count < 1 || count > 100) {
+    throw new HttpsError("invalid-argument", "Số lượng tài khoản phải từ 1 đến 100.");
+  }
+  if (!/^VKL-[A-F0-9]{32}$/.test(orderId)) {
+    throw new HttpsError("invalid-argument", "Mã đơn hàng không hợp lệ.");
+  }
+
+  const uid = request.auth.uid;
+  const username = String(request.auth.token.email || "Khách hàng").split("@")[0];
+  const orderRef = db.collection("orders").doc(orderId);
+  const trackingRef = db.collection("orderTracking").doc(orderId);
+
+  return db.runTransaction(async (tx) => {
+    const existingOrder = await tx.get(orderRef);
+    if (existingOrder.exists) {
+      const existing = existingOrder.data();
+      if (existing.userId !== uid) {
+        throw new HttpsError("permission-denied", "Mã đơn hàng không thuộc tài khoản của bạn.");
+      }
+      if (existing.deliveryStatus === "Đã giao tài khoản") {
+        return { orderId, delivered: Number(existing.deliveredAccountCount || count), alreadyProcessed: true };
+      }
+      throw new HttpsError("already-exists", "Mã đơn hàng đã được sử dụng.");
+    }
+
+    const stockQuery = db.collection("accInventory")
+      .where("level", "==", level)
+      .limit(count);
+    const stock = await tx.get(stockQuery);
+
+    if (stock.size < count) {
+      throw new HttpsError(
+        "failed-precondition",
+        "Kho " + level + " hiện chỉ còn " + stock.size + " tài khoản. Vui lòng giảm số lượng."
+      );
+    }
+
+    const accounts = stock.docs.map((doc) => {
+      const data = doc.data();
+      const account = String(data.account || "").trim();
+      const password = String(data.password || "").trim();
+      if (!account || !password || data.level !== level) {
+        throw new HttpsError("failed-precondition", "Có tài khoản trong kho bị thiếu thông tin. Vui lòng kiểm tra kho.");
+      }
+      return { account, password };
+    });
+
+    // Xóa kho và ghi đơn + thông tin giao trong cùng transaction để không phát trùng.
+    stock.docs.forEach((doc) => tx.delete(doc.ref));
+
+    for (let offset = 0, index = 0; offset < accounts.length; offset += 20, index++) {
+      const chunk = accounts.slice(offset, offset + 20);
+      const chunkRef = orderRef.collection("deliveredAccounts").doc(String(index).padStart(3, "0"));
+      tx.create(chunkRef, { index, accounts: chunk, createdAt: FieldValue.serverTimestamp() });
+    }
+
+    tx.create(orderRef, {
+      userId: uid,
+      username,
+      service,
+      count,
+      quantity: count,
+      total: 0,
+      codes: "",
+      date: date.slice(0, 80),
+      label: "Số lượng tài khoản",
+      deliveryStatus: "Đã giao tài khoản",
+      deliveredAccountCount: accounts.length,
+      createdAt: FieldValue.serverTimestamp(),
+      deliveredAt: FieldValue.serverTimestamp(),
+      source: "automaticInventory"
+    });
+
+    tx.create(trackingRef, {
+      userId: uid,
+      service,
+      status: "Đã giao tài khoản",
+      progress: 100,
+      eta: "Đã giao",
+      note: "Hệ thống đã tự động giao " + accounts.length + " tài khoản từ kho " + level + ".",
+      updatedAt: FieldValue.serverTimestamp()
+    });
+
+    return { orderId, delivered: accounts.length, alreadyProcessed: false };
+  });
+});
