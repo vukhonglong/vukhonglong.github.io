@@ -2036,15 +2036,15 @@ async function submitConfirmedOrder(){
 
  // ACC CLONE: không gửi email thông báo, chỉ hiển thị kết quả trên website.
   if (isCloneOrder) {
-   alert("TẠO ĐƠN THÀNH CÔNG!\\n\\n" +
+   alert("TẠO ĐƠN THÀNH CÔNG!\n\n" +
     "Mã đơn: " + order.id +
-    "\\n================================\\n" +
+    "\n================================\n" +
     "Dịch vụ: " + order.service +
-    "\\nSố lượng tài khoản: " + order.count +
-    "\\nTrạng thái: Đã giao tài khoản" +
-    "\\n===================\\n" +
+    "\nSố lượng tài khoản: " + order.count +
+    "\nTrạng thái: Đã giao tài khoản" +
+    "\n===================\n" +
     "Tổng tiền: " + orderPriceText(order.total) +
-    "\\nTài khoản đã được giao trong mục Lịch sử.");
+    "\nTài khoản đã được giao trong mục Lịch sử.");
    document.getElementById("codes").value = "";
    document.getElementById("cloneQuantity").value = "1";
    update();
