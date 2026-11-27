@@ -230,6 +230,168 @@ export default {
         return Response.json({ isAdmin: false, dailyUsed: spinResponse.ok, freeDailyEnabled, date }, { status: 200, headers: cors });
       }
 
+      if (action === "deliverCloneAccounts") {
+        const service = String(body.service || "");
+        const level = service === "ACC CLONE LV0" ? "LV0" :
+          service === "ACC CLONE LV12" ? "LV12" : "";
+        const count = Number(body.count);
+        const orderId = String(body.orderId || "");
+        const dateText = String(body.date || "").slice(0, 80);
+        if (!level) return Response.json({ error: "Loại tài khoản không hợp lệ." }, { status: 400, headers: cors });
+        if (!Number.isSafeInteger(count) || count < 1 || count > 100) {
+          return Response.json({ error: "Số lượng tài khoản phải từ 1 đến 100." }, { status: 400, headers: cors });
+        }
+        if (!/^VKL-[A-F0-9]{32}$/.test(orderId)) {
+          return Response.json({ error: "Mã đơn hàng không hợp lệ." }, { status: 400, headers: cors });
+        }
+
+        const orderName = documentRoot + "/orders/" + orderId;
+        const orderCheck = await fetch(base + "/orders/" + orderId, {
+          headers: { Authorization: "Bearer " + token }
+        });
+        if (orderCheck.ok) {
+          const existing = await orderCheck.json();
+          const fields = existing.fields || {};
+          if (fields.userId?.stringValue !== user.uid) {
+            return Response.json({ error: "Mã đơn hàng không thuộc tài khoản của bạn." }, { status: 403, headers: cors });
+          }
+          if (fields.deliveryStatus?.stringValue === "Đã giao tài khoản") {
+            return Response.json({ orderId, delivered: Number(fields.deliveredAccountCount?.integerValue || count), alreadyProcessed: true }, { status: 200, headers: cors });
+          }
+          return Response.json({ error: "Mã đơn hàng đã được sử dụng." }, { status: 409, headers: cors });
+        }
+        if (orderCheck.status !== 404) throw new Error("Không kiểm tra được mã đơn hàng.");
+
+        const begin = await firestoreRequest(base + ":beginTransaction", token, {
+          method: "POST",
+          body: JSON.stringify({ options: { readWrite: {} } })
+        });
+        const transaction = begin.transaction;
+        if (!transaction) throw new Error("Không khởi tạo được giao dịch kho.");
+
+        try {
+          const queryResult = await firestoreRequest(base + ":runQuery", token, {
+            method: "POST",
+            body: JSON.stringify({
+              structuredQuery: {
+                from: [{ collectionId: "accInventory" }],
+                where: {
+                  fieldFilter: {
+                    field: { fieldPath: "level" },
+                    op: "EQUAL",
+                    value: { stringValue: level }
+                  }
+                },
+                limit: count
+              },
+              transaction
+            })
+          });
+          const stockDocs = (Array.isArray(queryResult) ? queryResult : [])
+            .map(item => item.document).filter(Boolean);
+          if (stockDocs.length < count) {
+            await fetch(base + ":rollback", {
+              method: "POST",
+              headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+              body: JSON.stringify({ transaction })
+            });
+            return Response.json({
+              error: "Kho " + level + " hiện chỉ còn " + stockDocs.length + " tài khoản. Vui lòng giảm số lượng."
+            }, { status: 409, headers: cors });
+          }
+
+          const accounts = stockDocs.map(doc => {
+            const fields = doc.fields || {};
+            const account = fields.account?.stringValue || "";
+            const password = fields.password?.stringValue || "";
+            if (!account.trim() || !password.trim() || fields.level?.stringValue !== level) {
+              throw new Error("Có tài khoản trong kho bị thiếu thông tin. Vui lòng kiểm tra kho.");
+            }
+            return { account, password };
+          });
+
+          const timestamp = new Date().toISOString();
+          const stringField = value => ({ stringValue: String(value) });
+          const intField = value => ({ integerValue: String(value) });
+          const writes = stockDocs.map(doc => ({ delete: doc.name }));
+
+          for (let offset = 0, index = 0; offset < accounts.length; offset += 20, index++) {
+            const chunk = accounts.slice(offset, offset + 20);
+            const values = chunk.map(item => ({
+              mapValue: { fields: {
+                account: stringField(item.account),
+                password: stringField(item.password)
+              }}
+            }));
+            writes.push({
+              update: {
+                name: orderName + "/deliveredAccounts/" + String(index).padStart(3, "0"),
+                fields: {
+                  index: intField(index),
+                  accounts: { arrayValue: { values } },
+                  createdAt: { timestampValue: timestamp }
+                }
+              },
+              currentDocument: { exists: false }
+            });
+          }
+
+          const username = user.email ? user.email.split("@")[0] : "Khách hàng";
+          writes.push({
+            update: {
+              name: orderName,
+              fields: {
+                userId: stringField(user.uid),
+                username: stringField(username),
+                service: stringField(service),
+                count: intField(count),
+                quantity: intField(count),
+                total: intField(0),
+                codes: stringField(""),
+                date: stringField(dateText),
+                label: stringField("Số lượng tài khoản"),
+                deliveryStatus: stringField("Đã giao tài khoản"),
+                deliveredAccountCount: intField(accounts.length),
+                createdAt: { timestampValue: timestamp },
+                deliveredAt: { timestampValue: timestamp },
+                source: stringField("automaticInventory")
+              }
+            },
+            currentDocument: { exists: false }
+          });
+          writes.push({
+            update: {
+              name: documentRoot + "/orderTracking/" + orderId,
+              fields: {
+                userId: stringField(user.uid),
+                service: stringField(service),
+                status: stringField("Đã giao tài khoản"),
+                progress: intField(100),
+                eta: stringField("Đã giao"),
+                note: stringField("Hệ thống đã tự động giao " + accounts.length + " tài khoản từ kho " + level + "."),
+                updatedAt: { timestampValue: timestamp }
+              }
+            },
+            currentDocument: { exists: false }
+          });
+
+          await firestoreRequest(base + ":commit", token, {
+            method: "POST",
+            body: JSON.stringify({ transaction, writes })
+          });
+          return Response.json({ orderId, delivered: accounts.length, alreadyProcessed: false }, { status: 200, headers: cors });
+        } catch (transactionError) {
+          try {
+            await fetch(base + ":rollback", {
+              method: "POST",
+              headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+              body: JSON.stringify({ transaction })
+            });
+          } catch {}
+          throw transactionError;
+        }
+      }
+
       if (action !== "spin") return Response.json({ error: "Thao tác không hợp lệ." }, { status: 400, headers: cors });
       const requestId = String(body.requestId || "");
       if (!/^[A-Za-z0-9_-]{8,100}$/.test(requestId)) {
