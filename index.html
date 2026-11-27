@@ -2039,7 +2039,7 @@ async function submitConfirmedOrder(){
     service: order.service,
     count: order.count,
     quantity: numberFormat(order.quantity),
-    total: money(order.total),
+    total: orderPriceText(order.total),
     codes: order.codes || "",
     date: order.date,
     buyer_name: buyer && buyer.email ? buyer.email.split("@")[0] : "Không xác định",
