@@ -8365,6 +8365,7 @@ window.vklSupportSend = async function() {
     const isSlowOrder = normalizedValue.includes("đơn của mình đã đặt lâu") || normalizedValue.includes("đơn chạy chậm");
     const isOrderCodeError = normalizedValue.includes("đơn hàng của mình bị lỗi / sai mã") || normalizedValue.includes("đơn bị lỗi / sai mã");
     const isCancelOrder = normalizedValue.includes("mình muốn huỷ đơn") || normalizedValue.includes("muốn huỷ đơn");
+    const isCloneAccountError = normalizedValue.includes("acc clone lỗi");
     const currentUser = window.auth?.currentUser;
     let accountName = currentUser?.email ? currentUser.email.split("@")[0] : "bạn";
     let accountId = "chưa có ID";
@@ -8390,6 +8391,8 @@ window.vklSupportSend = async function() {
       reply.textContent = "TIN NHẮN TỰ ĐỘNG\n\nChào " + accountName + ", sau khi xác nhận đơn hàng hãy kiểm tra đúng thông tin nhé.\n\nSau khi đặt đơn, tiền sẽ trừ ngay và đơn xử lý khoảng 5–10 phút.\n\nNếu nhập sai mã, hãy gửi mã tại đây hoặc liên hệ nhanh để Admin hỗ trợ trước khi đơn chạy.";
     } else if (isCancelOrder) {
       reply.textContent = "TIN NHẮN TỰ ĐỘNG\n\nChào " + accountName + ", phải có lý do thật chính đáng trước khi huỷ nhé.\n\nMình đã ghi nhận nội dung và sẽ duyệt trong 2–5 phút trước khi đơn chạy.";
+    } else if (isCloneAccountError) {
+      reply.textContent = "TIN NHẮN TỰ ĐỘNG\n\nChào " + accountName + ", thường thì acc clone không thể chính xác 100%, chắc chắn sẽ có lỗi khoảng 5%.\n\nNếu gặp lỗi như bị ban hoặc sai tài khoản/mật khẩu thì báo mình, mình sẽ đổi acc khác nhé!";
     } else {
       reply.textContent = "Mình đã ghi nhận nội dung. Nếu cần xử lý tài khoản hoặc đơn hàng, bạn vui lòng để lại mã liên quan; admin sẽ phản hồi khi có mặt.";
     }
