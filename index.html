@@ -9049,15 +9049,17 @@ body.dark #serviceStatusGear {
       // chỉ truy vấn cấp còn lại để cập nhật bộ đếm, không đọc lại cấp hiện tại.
       const otherLevel = activeLevel === "LV0" ? "LV12" : "LV0";
       const otherSnap = await db.collection("accInventory").where("level","==",otherLevel).get();
+      const count0Value = activeLevel === "LV0" ? snap.size : otherSnap.size;
+      const count12Value = activeLevel === "LV12" ? snap.size : otherSnap.size;
       const count0 = el("vkl-acc-count-lv0");
       const count12 = el("vkl-acc-count-lv12");
-      if (activeLevel === "LV0") {
-        if (count0) count0.textContent = snap.size.toLocaleString("vi-VN");
-        if (count12) count12.textContent = otherSnap.size.toLocaleString("vi-VN");
-      } else {
-        if (count12) count12.textContent = snap.size.toLocaleString("vi-VN");
-        if (count0) count0.textContent = otherSnap.size.toLocaleString("vi-VN");
-      }
+      if (count0) count0.textContent = count0Value.toLocaleString("vi-VN");
+      if (count12) count12.textContent = count12Value.toLocaleString("vi-VN");
+      await db.collection("siteStats").doc("accInventory").set({
+        lv0: count0Value,
+        lv12: count12Value,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
       renderList();
     }catch(error){
       console.error(error);
@@ -9105,6 +9107,13 @@ body.dark #serviceStatusGear {
           inventoryRows=inventoryRows.filter(item=>item.id!==row.id);
           const activeCount = el(activeLevel === "LV0" ? "vkl-acc-count-lv0" : "vkl-acc-count-lv12");
           if (activeCount) activeCount.textContent = inventoryRows.length.toLocaleString("vi-VN");
+          const count0 = Number(el("vkl-acc-count-lv0")?.textContent?.replace(/[^0-9]/g,"") || 0);
+          const count12 = Number(el("vkl-acc-count-lv12")?.textContent?.replace(/[^0-9]/g,"") || 0);
+          await db.collection("siteStats").doc("accInventory").set({
+            lv0: activeLevel === "LV0" ? inventoryRows.length : count0,
+            lv12: activeLevel === "LV12" ? inventoryRows.length : count12,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
           renderList();
         }catch(error){ alert("Không xóa được: "+error.message); }
       };
