@@ -1564,10 +1564,23 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
 <section class="section" id="svcSection">
   <div class="section-head">
    <h2><span class="svc-head-icon" aria-hidden="true">⚡</span>Dịch Vụ &amp; Sự Kiện</h2>
-   <span class="muted">Chọn một gói</span>
+   <span class="muted">Chọn một mục</span>
   </div>
 
-  <div class="services">
+  <div class="svc-cats">
+   <button type="button" class="svc-cat" data-cat="clone" aria-pressed="false" onclick="showServiceCategory('clone')">
+    <img src="banners/cat-clone.jpg" alt="" width="693" height="404">
+    <b>ACC CLONE</b>
+    <span class="svc-cta">XEM TẤT CẢ</span>
+   </button>
+   <button type="button" class="svc-cat" data-cat="event" aria-pressed="false" onclick="showServiceCategory('event')">
+    <img src="banners/cat-event.jpg" alt="" width="693" height="404">
+    <b>SỰ KIỆN CHUNG SỨC</b>
+    <span class="svc-cta">XEM TẤT CẢ</span>
+   </button>
+  </div>
+
+  <div class="services svc-hidden" id="serviceList">
 
    <button class="service" id="ss" onclick="choose('ss')">
     <div class="service-art"><img src="banners/ss.jpg?v=2" alt="RƯƠNG SS" width="693" height="404" loading="lazy"></div>
@@ -1660,7 +1673,7 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
   </div>
  </section>
 
- <section class="section">
+ <section class="section svc-hidden" id="orderSection">
   <div class="section-head">
    <h2>✦ Tạo đơn sự kiện</h2>
   </div>
@@ -1882,9 +1895,32 @@ function numberFormat(n){
  return new Intl.NumberFormat("vi-VN").format(n);
 }
 
+function showServiceCategory(category){
+ const wantClone = category === "clone";
+ document.querySelectorAll("#svcSection .svc-cat").forEach(button => {
+  const active = button.dataset.cat === category;
+  button.classList.toggle("active", active);
+  button.setAttribute("aria-pressed", String(active));
+ });
+ document.getElementById("serviceList").classList.remove("svc-hidden");
+ Object.keys(PACKAGES).forEach(key => {
+  document.getElementById(key).classList.toggle("svc-hidden", key.startsWith("clone") !== wantClone);
+ });
+ // Đổi mục thì bỏ gói đang chọn ở mục kia
+ if(selected && isCloneService() !== wantClone){
+  document.getElementById(selected).classList.remove("selected");
+  selected = "";
+  document.getElementById("selectedText").textContent = "Chưa chọn dịch vụ";
+  update();
+ }
+ document.getElementById("orderSection").classList.toggle("svc-hidden", !selected);
+ document.getElementById("serviceList").scrollIntoView({behavior:"smooth", block:"nearest"});
+}
+
 function choose(type){
  if (!PACKAGES[type]) return;
  selected = type;
+ document.getElementById("orderSection").classList.remove("svc-hidden");
  Object.keys(PACKAGES).forEach(key => {
   document.getElementById(key).classList.toggle("selected", key === type);
  });
@@ -9248,6 +9284,16 @@ window.claimTopupMilestone = async function(amount, button) {
 
 <style>
 /* THẺ DỊCH VỤ DẠNG BANNER */
+.svc-hidden{display:none!important}
+#svcSection .svc-cats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#svcSection .svc-cat{display:flex;flex-direction:column;align-items:center;padding:0 0 12px;overflow:hidden;border:2px solid #929baa;border-radius:18px;background:transparent;color:inherit;font-family:inherit}
+#svcSection .svc-cat img{display:block;width:100%;height:auto}
+#svcSection .svc-cat b{display:flex;flex:1;align-items:center;padding:9px 6px 0;font-size:13px;font-weight:900}
+#svcSection .svc-cat.active{border-color:#ff9f1c;box-shadow:0 0 14px #ff9f1c99}
+#svcSection .svc-cat.active .svc-cta{background:linear-gradient(180deg,#ffb02e,#d9361e);border-color:#ffe39a}
+body.dark #svcSection .svc-cat{border-color:#303951}
+body.dark #svcSection .svc-cat.active{border-color:#ff9f1c}
+#svcSection #serviceList{margin-top:18px}
 #svcSection .section-head{flex-direction:column;justify-content:center;text-align:center;gap:6px}
 #svcSection .section-head h2{display:flex;align-items:center;justify-content:center;gap:10px;text-transform:uppercase}
 #svcSection .svc-head-icon{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:#fde7e2;border:1px solid #f3b9ac}
