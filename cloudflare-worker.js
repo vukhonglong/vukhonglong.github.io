@@ -25,6 +25,7 @@ function pemToArrayBuffer(pem) {
   return bytes.buffer;
 }
 
+let accStockMemoryCache = null;
 let cachedGoogleToken = "";
 let cachedGoogleTokenExpiresAt = 0;
 
@@ -140,7 +141,7 @@ async function firestoreRequest(url, token, options = {}) {
   try { data = text ? JSON.parse(text) : {}; } catch {}
   if (!response.ok) {
     const message = data.error && data.error.message ? data.error.message : response.statusText;
-    throw new Error("Firestore: " + message);
+    throw new Error("Firestore HTTP " + response.status + ": " + message);
   }
   return data;
 }
@@ -155,7 +156,7 @@ function firestoreValue(value) {
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
-    if (request.method === "GET") return Response.json({ service: "vkl-lucky-wheel", version: "2026-11-28-stock-cache-1", mode: "one-spin-per-day-vietnam-time" }, { status: 200, headers: cors });
+    if (request.method === "GET") return Response.json({ service: "vkl-lucky-wheel", version: "2026-11-28-stock-cache-2", mode: "one-spin-per-day-vietnam-time" }, { status: 200, headers: cors });
     if (request.method !== "POST") return Response.json({ error: "Method not allowed" }, { status: 405, headers: cors });
 
     try {
@@ -218,10 +219,18 @@ export default {
       if (action === "getAccStockCount") {
         // Cache số lượng kho trong 60 giây để tránh gọi Firestore liên tục khi nhiều khách tải trang.
         // Dữ liệu cache chỉ chứa số lượng, không chứa tài khoản/mật khẩu.
-        const stockCacheKey = new Request("https://vkl-internal-cache.invalid/acc-stock-count-v1");
+        const stockCacheKey = new Request("https://vkl-internal-cache.invalid/acc-stock-count-v2");
+        if (accStockMemoryCache && accStockMemoryCache.expiresAt > Date.now()) {
+          return new Response(accStockMemoryCache.payload, {
+            status: 200,
+            headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" }
+          });
+        }
         const cachedStock = await caches.default.match(stockCacheKey);
         if (cachedStock) {
-          return new Response(await cachedStock.text(), {
+          const cachedPayload = await cachedStock.text();
+          accStockMemoryCache = { payload: cachedPayload, expiresAt: Date.now() + 60000 };
+          return new Response(cachedPayload, {
             status: 200,
             headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" }
           });
@@ -251,8 +260,22 @@ export default {
             row.result.aggregateFields.total;
           return Number(value && (value.integerValue ?? value.doubleValue) || 0);
         };
-        const [lv0, lv12] = await Promise.all([countLevel("LV0"), countLevel("LV12")]);
+        // Thử lại tối đa 2 lần nếu Google trả 429 tạm thời.
+        const countWithRetry = async level => {
+          let lastError;
+          for (let attempt = 0; attempt < 3; attempt++) {
+            try { return await countLevel(level); }
+            catch (error) {
+              lastError = error;
+              if (!String(error.message).includes("HTTP 429") || attempt === 2) throw error;
+              await new Promise(resolve => setTimeout(resolve, 700 * (attempt + 1)));
+            }
+          }
+          throw lastError;
+        };
+        const [lv0, lv12] = await Promise.all([countWithRetry("LV0"), countWithRetry("LV12")]);
         const stockPayload = JSON.stringify({ success: true, counts: { LV0: lv0, LV12: lv12 } });
+        accStockMemoryCache = { payload: stockPayload, expiresAt: Date.now() + 60000 };
         const stockResponse = new Response(stockPayload, {
           status: 200,
           headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "public, max-age=60" }
