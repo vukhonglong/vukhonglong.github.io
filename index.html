@@ -1561,91 +1561,99 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
   </div>
 </div>
 
-<section class="section">
+<section class="section" id="svcSection">
   <div class="section-head">
-   <h2>⚡ Dịch Vụ & Sự Kiện ⚡</h2>
+   <h2><span class="svc-head-icon" aria-hidden="true">⚡</span>Dịch Vụ &amp; Sự Kiện</h2>
    <span class="muted">Chọn một gói</span>
   </div>
 
   <div class="services">
 
    <button class="service" id="ss" onclick="choose('ss')">
-    <div class="service-art"><span class="service-icon">🪎</span></div>
+    <div class="service-art"><img src="banners/ss.jpg" alt="RƯƠNG SS" width="693" height="404" loading="lazy"></div>
     <div class="service-info">
      <b>RƯƠNG SS</b>
      <small>Chung sức Liên Quân</small>
      <div class="price">5.000đ</div>
      <span class="badge">❤️</span>
+     <span class="svc-cta">CHỌN NGAY</span>
     </div>
    </button>
 
    <button class="service" id="full" onclick="choose('full')">
-    <div class="service-art"><span class="service-icon">🪎</span></div>
+    <div class="service-art"><img src="banners/full.jpg" alt="FULL SK" width="693" height="404" loading="lazy"></div>
     <div class="service-info">
      <b>FULL SK</b>
      <small>Chung sức Liên Quân</small>
      <div class="price">10.000đ</div>
      <span class="badge">❤️</span>
+     <span class="svc-cta">CHỌN NGAY</span>
     </div>
    </button>
 
    <button class="service" id="ticket1000" onclick="choose('ticket1000')">
-    <div class="service-art"><span class="service-icon">🎟️</span></div>
+    <div class="service-art"><img src="banners/ticket1000.jpg" alt="1.000 VÉ" width="693" height="404" loading="lazy"></div>
     <div class="service-info">
      <b>1.000 VÉ</b>
      <small>Chung sức Liên Quân</small>
      <div class="price">10.000đ</div>
      <span class="badge">❤️</span>
+     <span class="svc-cta">CHỌN NGAY</span>
     </div>
    </button>
 
    <button class="service" id="ticket5000" onclick="choose('ticket5000')">
-    <div class="service-art"><span class="service-icon">🎟️</span></div>
+    <div class="service-art"><img src="banners/ticket5000.jpg" alt="5.000 VÉ" width="693" height="404" loading="lazy"></div>
     <div class="service-info">
      <b>5.000 VÉ</b>
      <small>Chung sức Liên Quân</small>
      <div class="price">10.000đ</div>
      <span class="badge">❤️</span>
+     <span class="svc-cta">CHỌN NGAY</span>
     </div>
    </button>
 
    <button class="service" id="ticket10000" onclick="choose('ticket10000')">
-    <div class="service-art"><span class="service-icon">🎟️</span></div>
+    <div class="service-art"><img src="banners/ticket10000.jpg" alt="10.000 VÉ" width="693" height="404" loading="lazy"></div>
     <div class="service-info">
      <b>10.000 VÉ</b>
      <small>Chung sức Liên Quân</small>
      <div class="price">10.000đ</div>
      <span class="badge">❤️</span>
+     <span class="svc-cta">CHỌN NGAY</span>
     </div>
    </button>
 
    <button class="service" id="ticket20000" onclick="choose('ticket20000')">
-    <div class="service-art"><span class="service-icon">🎟️</span></div>
+    <div class="service-art"><img src="banners/ticket20000.jpg" alt="20.000 VÉ" width="693" height="404" loading="lazy"></div>
     <div class="service-info">
      <b>20.000 VÉ</b>
      <small>Chung sức Liên Quân</small>
      <div class="price">10.000đ</div>
      <span class="badge">❤️</span>
+     <span class="svc-cta">CHỌN NGAY</span>
     </div>
    </button>
 
    <button class="service" id="cloneLv0" onclick="choose('cloneLv0')">
-    <div class="service-art"><span class="service-icon">🎮</span></div>
+    <div class="service-art"><img src="banners/cloneLv0.jpg" alt="ACC CLONE LV0" width="693" height="404" loading="lazy"></div>
     <div class="service-info">
      <b>ACC CLONE LV0</b>
      <small>Tài khoản clone cấp 0</small>
      <div class="price">50 Xu</div>
      <span class="badge">❤️</span>
+     <span class="svc-cta">CHỌN NGAY</span>
     </div>
    </button>
 
    <button class="service" id="cloneLv12" onclick="choose('cloneLv12')">
-    <div class="service-art"><span class="service-icon">🎮</span></div>
+    <div class="service-art"><img src="banners/cloneLv12.jpg" alt="ACC CLONE LV12" width="693" height="404" loading="lazy"></div>
     <div class="service-info">
      <b>ACC CLONE LV12</b>
      <small>Tài khoản clone cấp 12</small>
      <div class="price">1.500 Xu</div>
      <span class="badge">❤️</span>
+     <span class="svc-cta">CHỌN NGAY</span>
     </div>
    </button>
 
@@ -9237,6 +9245,22 @@ window.claimTopupMilestone = async function(amount, button) {
   }
 };
 </script>
+
+<style>
+/* THẺ DỊCH VỤ DẠNG BANNER */
+#svcSection .section-head{flex-direction:column;justify-content:center;text-align:center;gap:6px}
+#svcSection .section-head h2{display:flex;align-items:center;justify-content:center;gap:10px;text-transform:uppercase}
+#svcSection .svc-head-icon{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:#fde7e2;border:1px solid #f3b9ac}
+#svcSection .section-head::after{content:"";width:90px;height:3px;background:linear-gradient(90deg,transparent,#d23a22,transparent)}
+#svcSection .service{display:flex;flex-direction:column;text-align:center}
+#svcSection .service-art{display:block;width:100%;height:auto;aspect-ratio:693/404;background:#c8241c}
+#svcSection .service-art img{display:block;width:100%;height:100%;object-fit:cover}
+#svcSection .service-info{display:flex;flex:1;flex-direction:column;align-items:center;width:100%;box-sizing:border-box;padding:11px 8px 13px}
+#svcSection .service-info b{font-size:14px;font-weight:900}
+#svcSection .price{display:inline-block;margin-top:9px;padding:5px 16px;border-radius:999px;border:1px solid #f3c1b8;background:#fbeae7;color:#c9301c;font-size:15px}
+#svcSection .svc-cta{display:inline-block;margin-top:10px;padding:8px 22px;border-radius:10px 3px;border:2px solid #9bd8ff;background:linear-gradient(180deg,#3f9bff,#2540c9);color:#fff;font-size:13px;font-weight:900;font-style:italic;text-shadow:0 1px 2px #001a66;box-shadow:0 3px 8px #2540c955;white-space:nowrap}
+#svcSection .service.selected .svc-cta{background:linear-gradient(180deg,#ffb02e,#d9361e);border-color:#ffe39a}
+</style>
 
 </body>
 </html>
