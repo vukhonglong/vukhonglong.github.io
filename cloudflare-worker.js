@@ -297,7 +297,7 @@ export default {
           }
           return Response.json({ error: "Mã đơn hàng đã được sử dụng." }, { status: 409, headers: cors });
         }
-        if (orderCheck.status !== 404) throw new Error("Không kiểm tra được mã đơn hàng.");
+        if (orderCheck.status !== 404) throw new Error("Không kiểm tra được mã đơn hàng. Mã lỗi " + orderCheck.status + ": " + (await orderCheck.text()).slice(0, 200));
 
         const begin = await firestoreRequest(base + ":beginTransaction", token, {
           method: "POST",
