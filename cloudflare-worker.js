@@ -223,7 +223,16 @@ export default {
         if (statsResponse.status === 404) {
           return Response.json({ success: true, counts: { LV0: 0, LV12: 0 } }, { status: 200, headers: cors });
         }
-        if (!statsResponse.ok) throw new Error("Không đọc được số lượng kho.");
+        if (!statsResponse.ok) {
+          const errorText = await statsResponse.text();
+          let errorMessage = "";
+          try {
+            const errorData = errorText ? JSON.parse(errorText) : {};
+            errorMessage = errorData.error?.message || "";
+          } catch {}
+          throw new Error("Không đọc được số lượng kho (Firestore HTTP " + statsResponse.status + ")" +
+            (errorMessage ? ": " + errorMessage : ""));
+        }
         const stats = await statsResponse.json();
         const fields = stats.fields || {};
         const numberField = field => Number(fields[field]?.integerValue ?? fields[field]?.doubleValue ?? 0);
