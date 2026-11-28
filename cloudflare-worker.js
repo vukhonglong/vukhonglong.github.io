@@ -215,6 +215,36 @@ export default {
         return Response.json({ entries: entries.slice(0, 100) }, { status: 200, headers: cors });
       }
 
+      if (action === "getAccStockCount") {
+        // Chỉ trả về số lượng tồn kho; tuyệt đối không trả thông tin tài khoản/mật khẩu.
+        const countLevel = async level => {
+          const response = await firestoreRequest(base + ":runAggregationQuery", token, {
+            method: "POST",
+            body: JSON.stringify({
+              structuredAggregationQuery: {
+                structuredQuery: {
+                  from: [{ collectionId: "accInventory" }],
+                  where: {
+                    fieldFilter: {
+                      field: { fieldPath: "level" },
+                      op: "EQUAL",
+                      value: { stringValue: level }
+                    }
+                  }
+                },
+                aggregations: [{ count: { alias: "total" } }]
+              }
+            })
+          });
+          const row = Array.isArray(response) ? response.find(item => item.result) : null;
+          const value = row && row.result && row.result.aggregateFields &&
+            row.result.aggregateFields.total;
+          return Number(value && (value.integerValue ?? value.doubleValue) || 0);
+        };
+        const [lv0, lv12] = await Promise.all([countLevel("LV0"), countLevel("LV12")]);
+        return Response.json({ success: true, counts: { LV0: lv0, LV12: lv12 } }, { status: 200, headers: cors });
+      }
+
       if (action === "status") {
         if (isAdmin) return Response.json({ isAdmin: true, dailyUsed: false, freeDailyEnabled: true, date }, { status: 200, headers: cors });
         const spinUrl = base + "/luckyWheelSpins/" + encodeURIComponent(user.uid + "_" + date);
