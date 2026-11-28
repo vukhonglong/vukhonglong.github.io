@@ -260,20 +260,23 @@ export default {
             row.result.aggregateFields.total;
           return Number(value && (value.integerValue ?? value.doubleValue) || 0);
         };
-        // Thử lại tối đa 2 lần nếu Google trả 429 tạm thời.
+        // Tránh bắn 2 truy vấn aggregation đồng thời gây dồn tải Firestore.
+        // Khi gặp 429, chờ theo cấp số tăng trước khi thử lại.
         const countWithRetry = async level => {
           let lastError;
-          for (let attempt = 0; attempt < 3; attempt++) {
+          for (let attempt = 0; attempt < 4; attempt++) {
             try { return await countLevel(level); }
             catch (error) {
               lastError = error;
-              if (!String(error.message).includes("HTTP 429") || attempt === 2) throw error;
-              await new Promise(resolve => setTimeout(resolve, 700 * (attempt + 1)));
+              if (!String(error.message).includes("HTTP 429") || attempt === 3) throw error;
+              await new Promise(resolve => setTimeout(resolve, [1500, 3000, 6000][attempt]));
             }
           }
           throw lastError;
         };
-        const [lv0, lv12] = await Promise.all([countWithRetry("LV0"), countWithRetry("LV12")]);
+        // Chạy tuần tự để giảm tải đột biến lên Firestore.
+        const lv0 = await countWithRetry("LV0");
+        const lv12 = await countWithRetry("LV12");
         const stockPayload = JSON.stringify({ success: true, counts: { LV0: lv0, LV12: lv12 } });
         accStockMemoryCache = { payload: stockPayload, expiresAt: Date.now() + 60000 };
         const stockResponse = new Response(stockPayload, {
