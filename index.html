@@ -1635,7 +1635,7 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
      <b>ACC CLONE LV0</b>
      <small>Tài khoản clone cấp 0</small>
      <div class="price">50 Xu</div>
-     <span class="badge" id="vkl-customer-stock-lv0">Đang tải kho...</span>
+     <span class="badge">❤️</span>
     </div>
    </button>
 
@@ -1645,7 +1645,7 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
      <b>ACC CLONE LV12</b>
      <small>Tài khoản clone cấp 12</small>
      <div class="price">1.500 Xu</div>
-     <span class="badge" id="vkl-customer-stock-lv12">Đang tải kho...</span>
+     <span class="badge">❤️</span>
     </div>
    </button>
 
@@ -2036,7 +2036,6 @@ async function submitConfirmedOrder(){
 
  // ACC CLONE: không gửi email thông báo, chỉ hiển thị kết quả trên website.
   if (isCloneOrder) {
-   if (typeof window.refreshCustomerAccStock === "function") window.refreshCustomerAccStock();
    alert("TẠO ĐƠN THÀNH CÔNG!\n\n" +
     "Mã đơn: " + order.id +
     "\n================================\n" +
@@ -8909,49 +8908,7 @@ body.dark #serviceStatusGear {
   }
   function el(id){ return document.getElementById(id); }
 
-  // Khách chỉ lấy số lượng tồn kho qua Cloudflare Worker.
-  // Worker chỉ trả số đếm, không bao giờ gửi tài khoản/mật khẩu ra trình duyệt khách.
-  window.refreshCustomerAccStock = async function(){
-    const targets = {
-      LV0: el("vkl-customer-stock-lv0"),
-      LV12: el("vkl-customer-stock-lv12")
-    };
-    const user = firebase.auth().currentUser;
-    if(!user){
-      Object.values(targets).forEach(target=>{
-        if(target) target.textContent = "Đăng nhập để xem kho";
-      });
-      return;
-    }
-    try{
-      Object.values(targets).forEach(target=>{
-        if(target) target.textContent = "Đang tải kho...";
-      });
-      const idToken = await user.getIdToken();
-      const response = await fetch("https://vkl-lucky-wheel.haphamngu123.workers.dev",{
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json",
-          "Authorization":"Bearer "+idToken
-        },
-        body:JSON.stringify({action:"getAccStockCount"})
-      });
-      const result = await response.json();
-      if(!response.ok || !result.success) throw new Error(result.error || "Không lấy được số lượng kho.");
-      ["LV0","LV12"].forEach(level=>{
-        const target = targets[level];
-        if(target) target.textContent = "Còn " + Number(result.counts?.[level] || 0).toLocaleString("vi-VN") + " acc";
-      });
-    }catch(error){
-      console.error("Không tải được số lượng kho ACC:",error);
-      Object.values(targets).forEach(target=>{
-        if(target) target.textContent = "Lỗi tải kho: " + String(error && error.message || error).slice(0, 110);
-      });
-    }
-  };
-  firebase.auth().onAuthStateChanged(()=>{
-    window.refreshCustomerAccStock();
-  });
+  // Không hiển thị số lượng tồn kho công khai cho ACC Clone.
   function escapeText(value){
     return String(value == null ? "" : value).replace(/[&<>"']/g, ch => ({
       "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
