@@ -2634,7 +2634,7 @@ ${isOwnerAccount ? `
     <div class="vkl-referral-heading">
       <div style="font-size:42px">🎁</div>
       <h3>GIỚI THIỆU BẠN BÈ</h3>
-      <p>Chia sẻ mã của bạn và nhận thưởng <strong>5.000 Xu</strong> khi lời mời được duyệt.</p>
+      <p>Chia sẻ mã của bạn và nhận thưởng <strong>5.000 Xu</strong> khi có người nhập mã hợp lệ.</p>
     </div>
 
     <div class="vkl-referral-card vkl-referral-code-card">
@@ -7600,22 +7600,55 @@ window.submitReferralCode = async function () {
         throw new Error("Bạn đã gửi mã giới thiệu trước đó.");
       }
 
+      const walletRef = db.collection("wallets").doc(inviterUid);
+      const historyRef = db.collection("coinTransactions").doc("referral_" + user.uid);
+      const walletSnap = await tx.get(walletRef);
+      const historySnap = await tx.get(historyRef);
+
+      if (!walletSnap.exists) {
+        throw new Error("Không tìm thấy ví người giới thiệu.");
+      }
+      if (historySnap.exists) {
+        throw new Error("Tài khoản này đã được ghi nhận thưởng giới thiệu.");
+      }
+
+      const wallet = walletSnap.data();
+      const oldBalance = Number(wallet.coins || 0);
+      const newBalance = oldBalance + reward;
+      if (!Number.isSafeInteger(newBalance)) {
+        throw new Error("Số dư ví không hợp lệ.");
+      }
+
+      const now = firebase.firestore.FieldValue.serverTimestamp();
       tx.update(codeRef, {
         usedBy: user.uid,
-        usedAt: firebase.firestore.FieldValue.serverTimestamp()
+        usedAt: now
       });
-
+      tx.update(walletRef, {
+        coins: newBalance,
+        updatedAt: now
+      });
+      tx.set(historyRef, {
+        uid: inviterUid,
+        userId: String(wallet.userId),
+        type: "add",
+        amount: reward,
+        balanceAfter: newBalance,
+        note: "Thưởng giới thiệu",
+        createdAt: now
+      });
       tx.set(requestRef, {
         referredUid: user.uid,
         inviterUid: inviterUid,
         referralCode: code,
-        status: "pending",
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        status: "approved",
+        createdAt: now,
+        reviewedAt: now
       });
     });
 
     input.value = "";
-    status.textContent = "Đã gửi mã! Bạn vui lòng đợi duyệt nhé.";
+    status.textContent = "Nhập mã thành công! Người giới thiệu đã nhận 5.000 Xu.";
 
   } catch (e) {
     console.error(e);
