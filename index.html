@@ -1635,7 +1635,7 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
      <b>ACC CLONE LV0</b>
      <small>Tài khoản clone cấp 0</small>
      <div class="price">50 Xu</div>
-     <span class="badge">❤️</span>
+     <span class="badge" id="vkl-customer-stock-lv0">Đang tải kho...</span>
     </div>
    </button>
 
@@ -1645,7 +1645,7 @@ body:not(.dark) button[onclick="openModal('mailbox')"] {
      <b>ACC CLONE LV12</b>
      <small>Tài khoản clone cấp 12</small>
      <div class="price">1.500 Xu</div>
-     <span class="badge">❤️</span>
+     <span class="badge" id="vkl-customer-stock-lv12">Đang tải kho...</span>
     </div>
    </button>
 
@@ -8900,6 +8900,21 @@ body.dark #serviceStatusGear {
       String(firebase.auth().currentUser.email || "").toLowerCase() === ADMIN_EMAIL);
   }
   function el(id){ return document.getElementById(id); }
+
+  // Số lượng tồn kho hiển thị công khai trên hai thẻ ACC CLONE.
+  // onSnapshot giúp tự cập nhật khi admin nhập/xóa acc hoặc đơn hàng lấy acc khỏi kho.
+  function watchCustomerStock(level, elementId){
+    const target = el(elementId);
+    if(!target) return;
+    db.collection("accInventory").where("level","==",level).onSnapshot(snapshot=>{
+      target.textContent = "Còn " + snapshot.size.toLocaleString("vi-VN") + " acc trong kho";
+    }, error=>{
+      console.error("Không tải được số lượng kho "+level+":",error);
+      target.textContent = "Không tải được kho";
+    });
+  }
+  watchCustomerStock("LV0","vkl-customer-stock-lv0");
+  watchCustomerStock("LV12","vkl-customer-stock-lv12");
   function escapeText(value){
     return String(value == null ? "" : value).replace(/[&<>"']/g, ch => ({
       "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
