@@ -218,12 +218,23 @@ export default {
 
       if (action === "getAccStockCount") {
         // Chỉ đọc tài liệu thống kê do trang quản lý kho cập nhật, không truy vấn accInventory.
+        // Cache số lượng kho để tránh mỗi lượt tải trang đều gọi Firestore.
+        const nowMs = Date.now();
+        if (accStockMemoryCache && nowMs - accStockMemoryCache.savedAt < 60000) {
+          return Response.json({ success: true, counts: accStockMemoryCache.counts, cached: true }, { status: 200, headers: cors });
+        }
         const statsUrl = base + "/siteStats/accInventory";
         const statsResponse = await fetch(statsUrl, { headers: { Authorization: "Bearer " + token } });
         if (statsResponse.status === 404) {
-          return Response.json({ success: true, counts: { LV0: 0, LV12: 0 } }, { status: 200, headers: cors });
+          const emptyCounts = { LV0: 0, LV12: 0 };
+          accStockMemoryCache = { counts: emptyCounts, savedAt: nowMs };
+          return Response.json({ success: true, counts: emptyCounts }, { status: 200, headers: cors });
         }
         if (!statsResponse.ok) {
+          // Nếu Firestore tạm hết quota, dùng số liệu thành công gần nhất trong tối đa 15 phút.
+          if (accStockMemoryCache && nowMs - accStockMemoryCache.savedAt < 900000) {
+            return Response.json({ success: true, counts: accStockMemoryCache.counts, cached: true, stale: true }, { status: 200, headers: cors });
+          }
           const errorText = await statsResponse.text();
           let errorMessage = "";
           try {
@@ -236,7 +247,9 @@ export default {
         const stats = await statsResponse.json();
         const fields = stats.fields || {};
         const numberField = field => Number(fields[field]?.integerValue ?? fields[field]?.doubleValue ?? 0);
-        return Response.json({ success: true, counts: { LV0: numberField("lv0"), LV12: numberField("lv12") } }, { status: 200, headers: cors });
+        const counts = { LV0: numberField("lv0"), LV12: numberField("lv12") };
+        accStockMemoryCache = { counts, savedAt: nowMs };
+        return Response.json({ success: true, counts }, { status: 200, headers: cors });
       }
 
       if (action === "status") {
