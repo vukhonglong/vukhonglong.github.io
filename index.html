@@ -1867,7 +1867,7 @@ function money(n){
  return new Intl.NumberFormat("vi-VN").format(n) + " Xu";
 }
 function orderPriceText(n){
- return Number(n) === 0 ? "Miễn phí" : money(n);
+ return Number(n) === 0 ? "0 Xu" : money(n);
 }
 
 function numberFormat(n){
