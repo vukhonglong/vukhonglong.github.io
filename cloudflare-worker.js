@@ -156,7 +156,7 @@ function firestoreValue(value) {
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
-    if (request.method === "GET") return Response.json({ service: "vkl-lucky-wheel", version: "2026-11-28-stock-cache-2", mode: "one-spin-per-day-vietnam-time" }, { status: 200, headers: cors });
+    if (request.method === "GET") return Response.json({ service: "vkl-lucky-wheel", version: "2026-11-28-stock-stats-1", mode: "one-spin-per-day-vietnam-time" }, { status: 200, headers: cors });
     if (request.method !== "POST") return Response.json({ error: "Method not allowed" }, { status: 405, headers: cors });
 
     try {
@@ -217,74 +217,17 @@ export default {
       }
 
       if (action === "getAccStockCount") {
-        // Cache số lượng kho trong 60 giây để tránh gọi Firestore liên tục khi nhiều khách tải trang.
-        // Dữ liệu cache chỉ chứa số lượng, không chứa tài khoản/mật khẩu.
-        const stockCacheKey = new Request("https://vkl-internal-cache.invalid/acc-stock-count-v2");
-        if (accStockMemoryCache && accStockMemoryCache.expiresAt > Date.now()) {
-          return new Response(accStockMemoryCache.payload, {
-            status: 200,
-            headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" }
-          });
+        // Chỉ đọc tài liệu thống kê do trang quản lý kho cập nhật, không truy vấn accInventory.
+        const statsUrl = base + "/siteStats/accInventory";
+        const statsResponse = await fetch(statsUrl, { headers: { Authorization: "Bearer " + token } });
+        if (statsResponse.status === 404) {
+          return Response.json({ success: true, counts: { LV0: 0, LV12: 0 } }, { status: 200, headers: cors });
         }
-        const cachedStock = await caches.default.match(stockCacheKey);
-        if (cachedStock) {
-          const cachedPayload = await cachedStock.text();
-          accStockMemoryCache = { payload: cachedPayload, expiresAt: Date.now() + 60000 };
-          return new Response(cachedPayload, {
-            status: 200,
-            headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" }
-          });
-        }
-        // Chỉ trả về số lượng tồn kho; tuyệt đối không trả thông tin tài khoản/mật khẩu.
-        const countLevel = async level => {
-          const response = await firestoreRequest(base + ":runAggregationQuery", token, {
-            method: "POST",
-            body: JSON.stringify({
-              structuredAggregationQuery: {
-                structuredQuery: {
-                  from: [{ collectionId: "accInventory" }],
-                  where: {
-                    fieldFilter: {
-                      field: { fieldPath: "level" },
-                      op: "EQUAL",
-                      value: { stringValue: level }
-                    }
-                  }
-                },
-                aggregations: [{ alias: "total", count: {} }]
-              }
-            })
-          });
-          const row = Array.isArray(response) ? response.find(item => item.result) : null;
-          const value = row && row.result && row.result.aggregateFields &&
-            row.result.aggregateFields.total;
-          return Number(value && (value.integerValue ?? value.doubleValue) || 0);
-        };
-        // Tránh bắn 2 truy vấn aggregation đồng thời gây dồn tải Firestore.
-        // Khi gặp 429, chờ theo cấp số tăng trước khi thử lại.
-        const countWithRetry = async level => {
-          let lastError;
-          for (let attempt = 0; attempt < 4; attempt++) {
-            try { return await countLevel(level); }
-            catch (error) {
-              lastError = error;
-              if (!String(error.message).includes("HTTP 429") || attempt === 3) throw error;
-              await new Promise(resolve => setTimeout(resolve, [1500, 3000, 6000][attempt]));
-            }
-          }
-          throw lastError;
-        };
-        // Chạy tuần tự để giảm tải đột biến lên Firestore.
-        const lv0 = await countWithRetry("LV0");
-        const lv12 = await countWithRetry("LV12");
-        const stockPayload = JSON.stringify({ success: true, counts: { LV0: lv0, LV12: lv12 } });
-        accStockMemoryCache = { payload: stockPayload, expiresAt: Date.now() + 60000 };
-        const stockResponse = new Response(stockPayload, {
-          status: 200,
-          headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "public, max-age=60" }
-        });
-        await caches.default.put(stockCacheKey, stockResponse.clone());
-        return new Response(stockPayload, { status: 200, headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" } });
+        if (!statsResponse.ok) throw new Error("Không đọc được số lượng kho.");
+        const stats = await statsResponse.json();
+        const fields = stats.fields || {};
+        const numberField = field => Number(fields[field]?.integerValue ?? fields[field]?.doubleValue ?? 0);
+        return Response.json({ success: true, counts: { LV0: numberField("lv0"), LV12: numberField("lv12") } }, { status: 200, headers: cors });
       }
 
       if (action === "status") {
@@ -345,13 +288,16 @@ export default {
           const walletName = documentRoot + "/wallets/" + encodeURIComponent(user.uid);
           const walletResults = await firestoreRequest(base + ":batchGet", token, {
             method: "POST",
-            body: JSON.stringify({ documents: [walletName], transaction })
+            body: JSON.stringify({ documents: [walletName, documentRoot + "/siteStats/accInventory"], transaction })
           });
           const walletResult = Array.isArray(walletResults)
             ? walletResults.find(item => item.found && item.found.name === walletName)
             : null;
           const walletDoc = walletResult && walletResult.found;
           if (!walletDoc) throw new Error("Không tìm thấy ví Xu của bạn.");
+          const statsName = documentRoot + "/siteStats/accInventory";
+          const statsResult = Array.isArray(walletResults) ? walletResults.find(item => item.found && item.found.name === statsName) : null;
+          const statsDoc = statsResult && statsResult.found;
           const walletFields = walletDoc.fields || {};
           const oldBalance = Number(
             walletFields.coins?.integerValue ??
@@ -421,6 +367,21 @@ export default {
           const stringField = value => ({ stringValue: String(value) });
           const intField = value => ({ integerValue: String(value) });
           const writes = stockDocs.map(doc => ({ delete: doc.name }));
+          if (statsDoc && statsDoc.fields) {
+            const statsFields = statsDoc.fields;
+            const current = field => Number(statsFields[field]?.integerValue ?? statsFields[field]?.doubleValue ?? 0);
+            writes.push({
+              update: {
+                name: statsName,
+                fields: {
+                  lv0: intField(Math.max(0, current("lv0") - (level === "LV0" ? count : 0))),
+                  lv12: intField(Math.max(0, current("lv12") - (level === "LV12" ? count : 0))),
+                  updatedAt: { timestampValue: timestamp }
+                },
+                updateMask: { fieldPaths: ["lv0", "lv12", "updatedAt"] }
+              }
+            });
+          }
           writes.push({
             update: {
               name: walletName,
