@@ -8945,7 +8945,7 @@ body.dark #serviceStatusGear {
     }catch(error){
       console.error("Không tải được số lượng kho ACC:",error);
       Object.values(targets).forEach(target=>{
-        if(target) target.textContent = "Tạm thời không tải được kho";
+        if(target) target.textContent = "Lỗi tải kho: " + String(error && error.message || error).slice(0, 110);
       });
     }
   };
