@@ -2634,7 +2634,7 @@ ${isOwnerAccount ? `
     <div class="vkl-referral-heading">
       <div style="font-size:42px">🎁</div>
       <h3>GIỚI THIỆU BẠN BÈ</h3>
-      <p>Chia sẻ mã của bạn và nhận thưởng <strong>5.000 Xu</strong> ngay khi có người nhập mã hợp lệ.</p>
+      <p>Chia sẻ mã của bạn. Bạn nhận <strong>5.000 Xu</strong> khi lượt giới thiệu được quản lý duyệt.</p>
     </div>
 
     <div class="vkl-referral-card vkl-referral-code-card">
@@ -7571,82 +7571,64 @@ window.submitReferralCode = async function () {
     return;
   }
 
-  status.textContent = "Đang xác minh mã và cộng thưởng...";
+  status.textContent = "Đang kiểm tra mã giới thiệu...";
 
   try {
     const codeRef = db.collection("referralCodes").doc(code);
     const requestRef = db.collection("referralRequests").doc(user.uid);
 
+    // Chỉ xác minh và ghi nhận lượt giới thiệu ở phía trình duyệt.
+    // Không cho trình duyệt tự cộng Xu hoặc tự tạo lịch sử nhận thưởng.
     await db.runTransaction(async tx => {
       const codeSnap = await tx.get(codeRef);
       const requestSnap = await tx.get(requestRef);
 
-      if (!codeSnap.exists) throw new Error("Mã giới thiệu không tồn tại.");
+      if (!codeSnap.exists) {
+        throw new Error("Mã giới thiệu không tồn tại.");
+      }
 
       const codeData = codeSnap.data();
       const inviterUid = codeData.uid;
 
-      if (!inviterUid || inviterUid === user.uid) {
+      if (inviterUid === user.uid) {
         throw new Error("Bạn không thể nhập mã của chính mình.");
       }
+
       if (codeData.usedBy) {
-        throw new Error("Mã giới thiệu này đã được sử dụng.");
+        throw new Error("Mã giới thiệu này đã được người khác sử dụng.");
       }
+
       if (requestSnap.exists) {
-        throw new Error("Tài khoản của bạn đã sử dụng hoặc gửi mã giới thiệu trước đó.");
-      }
-
-      const walletRef = db.collection("wallets").doc(inviterUid);
-      const historyRef = db.collection("coinTransactions").doc("referral_" + user.uid);
-      const walletSnap = await tx.get(walletRef);
-      const historySnap = await tx.get(historyRef);
-
-      if (!walletSnap.exists) throw new Error("Không tìm thấy ví người giới thiệu.");
-      if (historySnap.exists) throw new Error("Thưởng giới thiệu cho tài khoản này đã được ghi nhận.");
-
-      const wallet = walletSnap.data();
-      const oldBalance = Number(wallet.coins || 0);
-      const newBalance = oldBalance + reward;
-      if (!Number.isSafeInteger(oldBalance) || oldBalance < 0 ||
-          !Number.isSafeInteger(newBalance)) {
-        throw new Error("Số dư ví không hợp lệ.");
+        throw new Error("Bạn đã gửi mã giới thiệu trước đó.");
       }
 
       const now = firebase.firestore.FieldValue.serverTimestamp();
 
-      tx.update(codeRef, { usedBy: user.uid, usedAt: now });
-      tx.update(walletRef, { coins: newBalance, updatedAt: now });
-      tx.set(historyRef, {
-        uid: inviterUid,
-        userId: String(wallet.userId || ""),
-        type: "add",
-        amount: reward,
-        balanceAfter: newBalance,
-        note: "Thưởng giới thiệu",
-        createdAt: now
+      tx.update(codeRef, {
+        usedBy: user.uid,
+        usedAt: now
       });
+
       tx.set(requestRef, {
         referredUid: user.uid,
         inviterUid: inviterUid,
         referralCode: code,
-        status: "approved",
-        createdAt: now,
-        reviewedAt: now
+        status: "pending",
+        createdAt: now
       });
     });
 
     input.value = "";
-    status.textContent = "Nhập mã thành công! Người giới thiệu đã được cộng 5.000 Xu.";
+    status.textContent = "Mã hợp lệ! Yêu cầu đã được ghi nhận, phần thưởng 5.000 Xu sẽ được cộng sau khi quản lý duyệt.";
     if (typeof window.loadReferralPanel === "function") {
       window.loadReferralPanel();
     }
+
   } catch (e) {
     console.error(e);
-    status.textContent = e.code === "permission-denied"
-      ? "Firestore Rules chưa cấp quyền cho tính năng tự động cộng thưởng. Cần cập nhật Rules."
-      : (e.message || "Không thể xử lý mã giới thiệu.");
+    status.textContent = e.message || "Không thể gửi mã giới thiệu.";
   }
-};;
+};
 
   window.loadReferralAdminList = async function () {
     const user = auth.currentUser;
