@@ -232,7 +232,7 @@ export default {
                     }
                   }
                 },
-                aggregations: [{ count: { alias: "total" } }]
+                aggregations: [{ alias: "total", count: {} }]
               }
             })
           });
