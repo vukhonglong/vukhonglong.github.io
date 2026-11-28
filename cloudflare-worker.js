@@ -155,7 +155,7 @@ function firestoreValue(value) {
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
-    if (request.method === "GET") return Response.json({ service: "vkl-lucky-wheel", version: "2026-11-28-stock-debug-1", mode: "one-spin-per-day-vietnam-time" }, { status: 200, headers: cors });
+    if (request.method === "GET") return Response.json({ service: "vkl-lucky-wheel", version: "2026-11-28-stock-cache-1", mode: "one-spin-per-day-vietnam-time" }, { status: 200, headers: cors });
     if (request.method !== "POST") return Response.json({ error: "Method not allowed" }, { status: 405, headers: cors });
 
     try {
@@ -216,6 +216,16 @@ export default {
       }
 
       if (action === "getAccStockCount") {
+        // Cache số lượng kho trong 60 giây để tránh gọi Firestore liên tục khi nhiều khách tải trang.
+        // Dữ liệu cache chỉ chứa số lượng, không chứa tài khoản/mật khẩu.
+        const stockCacheKey = new Request("https://vkl-internal-cache.invalid/acc-stock-count-v1");
+        const cachedStock = await caches.default.match(stockCacheKey);
+        if (cachedStock) {
+          return new Response(await cachedStock.text(), {
+            status: 200,
+            headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" }
+          });
+        }
         // Chỉ trả về số lượng tồn kho; tuyệt đối không trả thông tin tài khoản/mật khẩu.
         const countLevel = async level => {
           const response = await firestoreRequest(base + ":runAggregationQuery", token, {
@@ -242,7 +252,13 @@ export default {
           return Number(value && (value.integerValue ?? value.doubleValue) || 0);
         };
         const [lv0, lv12] = await Promise.all([countLevel("LV0"), countLevel("LV12")]);
-        return Response.json({ success: true, counts: { LV0: lv0, LV12: lv12 } }, { status: 200, headers: cors });
+        const stockPayload = JSON.stringify({ success: true, counts: { LV0: lv0, LV12: lv12 } });
+        const stockResponse = new Response(stockPayload, {
+          status: 200,
+          headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "public, max-age=60" }
+        });
+        await caches.default.put(stockCacheKey, stockResponse.clone());
+        return new Response(stockPayload, { status: 200, headers: { ...cors, "Content-Type": "application/json", "Cache-Control": "no-store" } });
       }
 
       if (action === "status") {
