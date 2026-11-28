@@ -2036,6 +2036,7 @@ async function submitConfirmedOrder(){
 
  // ACC CLONE: không gửi email thông báo, chỉ hiển thị kết quả trên website.
   if (isCloneOrder) {
+   if (typeof window.refreshCustomerAccStock === "function") window.refreshCustomerAccStock();
    alert("TẠO ĐƠN THÀNH CÔNG!\n\n" +
     "Mã đơn: " + order.id +
     "\n================================\n" +
@@ -8908,20 +8909,49 @@ body.dark #serviceStatusGear {
   }
   function el(id){ return document.getElementById(id); }
 
-  // Số lượng tồn kho hiển thị công khai trên hai thẻ ACC CLONE.
-  // onSnapshot giúp tự cập nhật khi admin nhập/xóa acc hoặc đơn hàng lấy acc khỏi kho.
-  function watchCustomerStock(level, elementId){
-    const target = el(elementId);
-    if(!target) return;
-    db.collection("accInventory").where("level","==",level).onSnapshot(snapshot=>{
-      target.textContent = "Còn " + snapshot.size.toLocaleString("vi-VN") + " acc";
-    }, error=>{
-      console.error("Không tải được số lượng kho "+level+":",error);
-      target.textContent = "Không tải được kho";
-    });
-  }
-  watchCustomerStock("LV0","vkl-customer-stock-lv0");
-  watchCustomerStock("LV12","vkl-customer-stock-lv12");
+  // Khách chỉ lấy số lượng tồn kho qua Cloudflare Worker.
+  // Worker chỉ trả số đếm, không bao giờ gửi tài khoản/mật khẩu ra trình duyệt khách.
+  window.refreshCustomerAccStock = async function(){
+    const targets = {
+      LV0: el("vkl-customer-stock-lv0"),
+      LV12: el("vkl-customer-stock-lv12")
+    };
+    const user = firebase.auth().currentUser;
+    if(!user){
+      Object.values(targets).forEach(target=>{
+        if(target) target.textContent = "Đăng nhập để xem kho";
+      });
+      return;
+    }
+    try{
+      Object.values(targets).forEach(target=>{
+        if(target) target.textContent = "Đang tải kho...";
+      });
+      const idToken = await user.getIdToken();
+      const response = await fetch("https://vkl-lucky-wheel.haphamngu123.workers.dev",{
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          "Authorization":"Bearer "+idToken
+        },
+        body:JSON.stringify({action:"getAccStockCount"})
+      });
+      const result = await response.json();
+      if(!response.ok || !result.success) throw new Error(result.error || "Không lấy được số lượng kho.");
+      ["LV0","LV12"].forEach(level=>{
+        const target = targets[level];
+        if(target) target.textContent = "Còn " + Number(result.counts?.[level] || 0).toLocaleString("vi-VN") + " acc";
+      });
+    }catch(error){
+      console.error("Không tải được số lượng kho ACC:",error);
+      Object.values(targets).forEach(target=>{
+        if(target) target.textContent = "Tạm thời không tải được kho";
+      });
+    }
+  };
+  firebase.auth().onAuthStateChanged(()=>{
+    window.refreshCustomerAccStock();
+  });
   function escapeText(value){
     return String(value == null ? "" : value).replace(/[&<>"']/g, ch => ({
       "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
