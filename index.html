@@ -2634,7 +2634,7 @@ ${isOwnerAccount ? `
     <div class="vkl-referral-heading">
       <div style="font-size:42px">🎁</div>
       <h3>GIỚI THIỆU BẠN BÈ</h3>
-      <p>Chia sẻ mã của bạn và nhận thưởng <strong>5.000 Xu</strong> khi có người nhập mã hợp lệ.</p>
+      <p>Chia sẻ mã của bạn. Bạn nhận <strong>5.000 Xu</strong> khi lượt giới thiệu được quản lý duyệt.</p>
     </div>
 
     <div class="vkl-referral-card vkl-referral-code-card">
@@ -7571,12 +7571,14 @@ window.submitReferralCode = async function () {
     return;
   }
 
-  status.textContent = "Đang gửi yêu cầu...";
+  status.textContent = "Đang kiểm tra mã giới thiệu...";
 
   try {
     const codeRef = db.collection("referralCodes").doc(code);
     const requestRef = db.collection("referralRequests").doc(user.uid);
 
+    // Chỉ xác minh và ghi nhận lượt giới thiệu ở phía trình duyệt.
+    // Không cho trình duyệt tự cộng Xu hoặc tự tạo lịch sử nhận thưởng.
     await db.runTransaction(async tx => {
       const codeSnap = await tx.get(codeRef);
       const requestSnap = await tx.get(requestRef);
@@ -7600,61 +7602,33 @@ window.submitReferralCode = async function () {
         throw new Error("Bạn đã gửi mã giới thiệu trước đó.");
       }
 
-      const walletRef = db.collection("wallets").doc(inviterUid);
-      const historyRef = db.collection("coinTransactions").doc("referral_" + user.uid);
-      const walletSnap = await tx.get(walletRef);
-      const historySnap = await tx.get(historyRef);
-
-      if (!walletSnap.exists) {
-        throw new Error("Không tìm thấy ví người giới thiệu.");
-      }
-      if (historySnap.exists) {
-        throw new Error("Tài khoản này đã được ghi nhận thưởng giới thiệu.");
-      }
-
-      const wallet = walletSnap.data();
-      const oldBalance = Number(wallet.coins || 0);
-      const newBalance = oldBalance + reward;
-      if (!Number.isSafeInteger(newBalance)) {
-        throw new Error("Số dư ví không hợp lệ.");
-      }
-
       const now = firebase.firestore.FieldValue.serverTimestamp();
+
       tx.update(codeRef, {
         usedBy: user.uid,
         usedAt: now
       });
-      tx.update(walletRef, {
-        coins: newBalance,
-        updatedAt: now
-      });
-      tx.set(historyRef, {
-        uid: inviterUid,
-        userId: String(wallet.userId),
-        type: "add",
-        amount: reward,
-        balanceAfter: newBalance,
-        note: "Thưởng giới thiệu",
-        createdAt: now
-      });
+
       tx.set(requestRef, {
         referredUid: user.uid,
         inviterUid: inviterUid,
         referralCode: code,
-        status: "approved",
-        createdAt: now,
-        reviewedAt: now
+        status: "pending",
+        createdAt: now
       });
     });
 
     input.value = "";
-    status.textContent = "Nhập mã thành công! Người giới thiệu đã nhận 5.000 Xu.";
+    status.textContent = "Mã hợp lệ! Yêu cầu đã được ghi nhận, phần thưởng 5.000 Xu sẽ được cộng sau khi quản lý duyệt.";
+    if (typeof window.loadReferralPanel === "function") {
+      window.loadReferralPanel();
+    }
 
   } catch (e) {
     console.error(e);
-    status.textContent = e.message || "Gửi mã thất bại.";
+    status.textContent = e.message || "Không thể gửi mã giới thiệu.";
   }
-};
+};;
 
   window.loadReferralAdminList = async function () {
     const user = auth.currentUser;
