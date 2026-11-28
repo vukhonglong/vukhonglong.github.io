@@ -8907,7 +8907,7 @@ body.dark #serviceStatusGear {
     const target = el(elementId);
     if(!target) return;
     db.collection("accInventory").where("level","==",level).onSnapshot(snapshot=>{
-      target.textContent = "Còn " + snapshot.size.toLocaleString("vi-VN") + " acc trong kho";
+      target.textContent = "Còn " + snapshot.size.toLocaleString("vi-VN") + " acc";
     }, error=>{
       console.error("Không tải được số lượng kho "+level+":",error);
       target.textContent = "Không tải được kho";
